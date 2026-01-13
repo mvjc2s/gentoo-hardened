@@ -1,0 +1,19 @@
+# /etc/portage/package.license/licenses
+#
+# Licenças aceitas por pacote
+#
+
+# Linux firmware (blobs binários)
+sys-kernel/linux-firmware linux-fw-redistributable no-source-code
+
+# NVIDIA drivers
+x11-drivers/nvidia-drivers NVIDIA-r2
+
+# NVIDIA CUDA (se usar)
+dev-util/nvidia-cuda-toolkit NVIDIA-CUDA
+
+# Intel microcode
+sys-firmware/intel-microcode intel-ucode
+
+# Fontes (se necessário)
+# media-fonts/corefonts MSttfEULA

@@ -1,0 +1,31 @@
+# /etc/portage/package.use/system
+#
+# USE flags para componentes do sistema
+#
+
+# Kmod - carregador de módulos
+# Suporte a compressão de módulos
+sys-apps/kmod lzma zlib zstd
+
+# OpenSSL - biblioteca criptográfica
+dev-libs/openssl asm
+
+# NetworkManager ou dhcpcd
+net-misc/dhcpcd embedded
+
+# Sudo
+app-admin/sudo -sendmail
+
+# Vim/Neovim
+app-editors/vim minimal -X -gtk -perl -python
+app-editors/neovim -nvimpager
+
+# Git
+dev-vcs/git -perl -gpg curl
+
+# Tmux
+app-misc/tmux -utempter
+
+# Fish/Zsh (se usar)
+# app-shells/fish -doc
+# app-shells/zsh -gdbm

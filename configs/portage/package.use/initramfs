@@ -1,0 +1,26 @@
+# /etc/portage/package.use/initramfs
+#
+# USE flags para componentes do initramfs
+# Todos precisam ser compilados estaticamente
+#
+
+# Cryptsetup - gerenciamento LUKS
+# static: compilar estaticamente para initramfs
+# static-libs: bibliotecas estáticas
+# argon2: suporte ao KDF argon2id (LUKS2)
+sys-fs/cryptsetup static static-libs argon2 -gcrypt openssl
+
+# Btrfs tools - ferramentas do sistema de arquivos
+# static-libs: necessário para btrfs estático
+sys-fs/btrfs-progs static-libs
+
+# Busybox - shell e utilitários mínimos
+# static: compilar estaticamente
+# mdev: hotplug minimalista
+sys-apps/busybox static mdev
+
+# LVM2 (se usar LVM sobre LUKS)
+# sys-fs/lvm2 static static-libs -thin
+
+# Util-linux - blkid estático (se necessário)
+# sys-apps/util-linux static-libs

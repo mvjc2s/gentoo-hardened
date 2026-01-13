@@ -1,0 +1,122 @@
+# =============================================================================
+# Gentoo Custom Initramfs - File Specification
+# Para uso com: CONFIG_INITRAMFS_SOURCE no kernel
+# =============================================================================
+
+# -----------------------------------------------------------------------------
+# Diretórios base
+# -----------------------------------------------------------------------------
+dir /bin       0755 0 0
+dir /sbin      0755 0 0
+dir /etc       0755 0 0
+dir /dev       0755 0 0
+dir /lib       0755 0 0
+dir /lib64     0755 0 0
+dir /mnt       0755 0 0
+dir /mnt/usb   0755 0 0
+dir /newroot   0755 0 0
+dir /proc      0555 0 0
+dir /sys       0555 0 0
+dir /run       0755 0 0
+dir /tmp       1777 0 0
+
+# Diretórios para descoberta de dispositivos
+dir /dev/disk            0755 0 0
+dir /dev/disk/by-label   0755 0 0
+dir /dev/disk/by-uuid    0755 0 0
+dir /dev/disk/by-partuuid 0755 0 0
+
+# -----------------------------------------------------------------------------
+# Nodes de dispositivo essenciais
+# -----------------------------------------------------------------------------
+nod /dev/console  0600 0 0 c 5 1
+nod /dev/null     0666 0 0 c 1 3
+nod /dev/zero     0666 0 0 c 1 5
+nod /dev/tty      0666 0 0 c 5 0
+nod /dev/tty0     0620 0 0 c 4 0
+nod /dev/tty1     0620 0 0 c 4 1
+nod /dev/urandom  0444 0 0 c 1 9
+nod /dev/random   0444 0 0 c 1 8
+nod /dev/kmsg     0660 0 0 c 1 11
+
+# SATA/SCSI (fallback)
+nod /dev/sda      0660 0 0 b 8 0
+nod /dev/sda1     0660 0 0 b 8 1
+nod /dev/sda2     0660 0 0 b 8 2
+nod /dev/sda3     0660 0 0 b 8 3
+
+# NVMe - disco principal no Lenovo LOQ
+# Major 259, minors calculados como: (nvme_ns * 1) + partition
+# nvme0n1 = 259:0, nvme0n1p1 = 259:1, etc.
+nod /dev/nvme0    0660 0 0 c 241 0
+nod /dev/nvme0n1  0660 0 0 b 259 0
+nod /dev/nvme0n1p1 0660 0 0 b 259 1
+nod /dev/nvme0n1p2 0660 0 0 b 259 2
+nod /dev/nvme0n1p3 0660 0 0 b 259 3
+nod /dev/nvme0n1p4 0660 0 0 b 259 4
+
+# Device mapper (para cryptsetup)
+dir /dev/mapper  0755 0 0
+nod /dev/mapper/control 0660 0 0 c 10 236
+
+# USB (para pendrive com secrets)
+# Os dispositivos USB geralmente são enumerados como sd*
+# mdev irá criar os nodes dinamicamente
+
+# -----------------------------------------------------------------------------
+# Binários - TODOS COMPILADOS ESTATICAMENTE
+# -----------------------------------------------------------------------------
+
+# Busybox - shell e utilitários básicos
+# Compilar com: USE="static" emerge sys-apps/busybox
+file /bin/busybox /bin/busybox 0755 0 0
+
+# Cryptsetup - gerenciamento LUKS
+# Compilar com: USE="static static-libs" emerge sys-fs/cryptsetup
+file /sbin/cryptsetup /sbin/cryptsetup.static 0755 0 0
+
+# Btrfs tools - necessário para montar subvolumes
+# Compilar com: USE="static static-libs" emerge sys-fs/btrfs-progs
+file /sbin/btrfs /sbin/btrfs.static 0755 0 0
+
+# Blkid - identificação de dispositivos por UUID/LABEL
+# Incluído no util-linux, precisa compilar estaticamente
+# Alternativa: usar busybox blkid se disponível
+file /sbin/blkid /sbin/blkid.static 0755 0 0
+
+# -----------------------------------------------------------------------------
+# Links simbólicos do busybox
+# -----------------------------------------------------------------------------
+slink /bin/sh /bin/busybox 0755 0 0
+slink /sbin/mdev /bin/busybox 0755 0 0
+slink /bin/mount /bin/busybox 0755 0 0
+slink /bin/umount /bin/busybox 0755 0 0
+slink /bin/mkdir /bin/busybox 0755 0 0
+slink /bin/cat /bin/busybox 0755 0 0
+slink /bin/echo /bin/busybox 0755 0 0
+slink /bin/ls /bin/busybox 0755 0 0
+slink /bin/sleep /bin/busybox 0755 0 0
+slink /bin/printf /bin/busybox 0755 0 0
+slink /bin/clear /bin/busybox 0755 0 0
+slink /sbin/switch_root /bin/busybox 0755 0 0
+slink /sbin/setsid /bin/busybox 0755 0 0
+slink /sbin/cttyhack /bin/busybox 0755 0 0
+slink /bin/readlink /bin/busybox 0755 0 0
+
+# -----------------------------------------------------------------------------
+# Script de inicialização
+# -----------------------------------------------------------------------------
+file /init /usr/src/initramfs/init 0755 0 0
+
+# -----------------------------------------------------------------------------
+# Configuração mdev (hotplug simplificado)
+# -----------------------------------------------------------------------------
+file /etc/mdev.conf /usr/src/initramfs/mdev.conf 0644 0 0
+
+# -----------------------------------------------------------------------------
+# NOTA IMPORTANTE SOBRE SEGREDOS
+# -----------------------------------------------------------------------------
+# NÃO inclua key.img ou header.img aqui!
+# Eles devem ficar em um dispositivo USB externo.
+# Incluí-los no initramfs anula o propósito do detached header.
+# -----------------------------------------------------------------------------
