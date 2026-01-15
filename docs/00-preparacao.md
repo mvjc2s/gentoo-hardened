@@ -16,18 +16,35 @@
 ## Obtendo o Live Environment
 
 ### Opção 1: Gentoo Minimal Installation CD
+
 ```bash
 # Download
-wget https://distfiles.gentoo.org/releases/amd64/autobuilds/current-install-amd64-minimal/install-amd64-minimal-*.iso
+BASE="https://distfiles.gentoo.org/releases/amd64/autobuilds/current-install-amd64-minimal"
+TXT="latest-install-amd64-minimal.txt"
+wget $BASE/$TXT
+ISO=`cat $TXT | grep minimal | cut -d " " -f1`
+wget $BASE/$ISO
 
 # Verificar
-wget https://distfiles.gentoo.org/releases/amd64/autobuilds/current-install-amd64-minimal/install-amd64-minimal-*.iso.sha256
-sha256sum -c install-amd64-minimal-*.iso.sha256
+FILE=`echo $ISO | cut -d "/" -f2`
+wget $BASE/$FILE.{asc,sha256,DIGESTS,CONTENTS.gz}
+sha256sum -c $FILE.sha256
+gpg --auto-key-locate=clear,nodefault,wkd --locate-key releng@gentoo.org
+gpg --verify $FILE.asc
 ```
 
 ### Opção 2: SystemRescue (mais ferramentas)
 ```bash
-wget https://fastly-cdn.system-rescue.org/releases/systemrescue-*.iso
+BASE="https://fastly-cdn.system-rescue.org/releases"
+VERSION="12.03"
+FILE="systemrescue-$VERSION-amd64.iso"
+wget $BASE/$VERSION/$FILE
+wget $BASE/$VERSION/$FILE.{sha512,asc}
+sha512sum --check $FILE.sha512
+wget https://www.system-rescue.org/security/signing-keys/gnupg-pubkey-fdupoux-20210704-v001.pem
+mv gnupg*.pem gnupg-pubkey.txt
+gpg --import gnupg-pubkey.txt
+gpg --verify $FILE.asc $FILE
 ```
 
 ## Planejamento de Partições
