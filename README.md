@@ -100,7 +100,8 @@ O detached header oferece:
 - [Gentoo Handbook](https://wiki.gentoo.org/wiki/Handbook:AMD64)
 - [Custom Initramfs](https://wiki.gentoo.org/wiki/Custom_Initramfs)
 - [Dm-crypt](https://wiki.gentoo.org/wiki/Dm-crypt)
-- [LUKS Detached Header](https://wiki.archlinux.org/title/Dm-crypt/Specialties#Encrypted_system_using_a_detached_LUKS_header)
+- [Arch Wiki - LUKS Detached Header](https://wiki.archlinux.org/title/Dm-crypt/Specialties#Encrypted_system_using_a_detached_LUKS_header)
+- [Gentoo Wiki](https://wiki.gentoo.org/wiki/Custom_Initramfs)
 - [EFI Stub](https://wiki.gentoo.org/wiki/EFI_stub)
 
 ## Licença

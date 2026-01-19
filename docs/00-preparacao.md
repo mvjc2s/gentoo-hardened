@@ -52,10 +52,15 @@ gpg --verify $FILE.asc $FILE
 ### NVMe Principal
 | Partição | Tamanho | Tipo | Uso |
 |----------|---------|------|-----|
-| nvme0n1p1 | 512MB | EFI System | /boot/efi |
-| nvme0n1p2 | Resto | Linux filesystem | LUKS → btrfs |
+| sdXx | 1 GiB | EFI System | /boot/efi, contendo kernel e initramfs |
+| sdXx | Resto | Linux filesystem | LUKS -> ext4, contendo a chave e o header |
 
-### USB de Secrets
+### NVMe Principal
+| Partição | Tamanho | Tipo | Uso |
+|----------|---------|------|-----|
+| nvme0n1 | Resto | Linux filesystem | LUKS -> btrfs |
+
+### Partição LUKS no dispositivo USB para Secrets
 | Arquivo | Tamanho | Descrição |
 |---------|---------|-----------|
 | key.img | 4MB | Keyfile LUKS encrypted |
@@ -64,16 +69,16 @@ gpg --verify $FILE.asc $FILE
 ## Identificando Dispositivos
 
 ```bash
-# Listar todos os discos
-lsblk -o NAME,SIZE,TYPE,MOUNTPOINT
+# Listar todos os discos por nome, tamanho e tipo 
+lsblk -o NAME,SIZE,TYPE
 
-# Identificar NVMe
+# Identificar dispositivos NVMe
 ls -la /dev/nvme*
 
-# Identificar USB
+# Identificar USB (verificar com extrema atenção)
 ls -la /dev/sd*
 
-# Detalhes com parted
+# Detalhar com parted
 parted -l
 ```
 
@@ -97,7 +102,7 @@ wpa_passphrase "SSID" "senha" > /etc/wpa_supplicant.conf
 wpa_supplicant -B -i wlan0 -c /etc/wpa_supplicant.conf
 dhcpcd wlan0
 
-# Testar
+# Testar conectividade
 ping -c 3 gentoo.org
 ```
 
@@ -107,19 +112,10 @@ ping -c 3 gentoo.org
 # Importante para verificação de assinaturas
 ntpd -q -g
 
-# Ou manualmente
+# Ou manualmente (apenas altere para os valores correspondentes nos comandos abaixo)
 date MMDDhhmmYYYY
+date -s "HH:MM:SS"
 ```
-
-## Obtendo PARTUUID (para depois)
-
-Após particionar, anote o PARTUUID:
-
-```bash
-blkid -s PARTUUID -o value /dev/nvme0n1p2
-```
-
-Este valor será usado no script init do initramfs.
 
 ## Checklist
 
