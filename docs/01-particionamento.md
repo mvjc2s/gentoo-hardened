@@ -7,56 +7,64 @@ Este setup usa:
 - Keyfile separado também criptografado
 - Sem header no disco principal = plausible deniability
 
-## Particionamento do NVMe
+## Preparação do dispositivo NVMe
 
 ```bash
-# Identificar o dispositivo NVMe
+# Configurar a variável NVME contendo o dispositivo NVMe para o sistema
 NVME=/dev/nvme0n1
 
-# Criar tabela de partições GPT
-parted -a optimal $NVME mklabel gpt
-
-# Partição EFI (512MB)
-parted -a optimal $NVME mkpart primary fat32 1MiB 513MiB
-parted $NVME set 1 esp on
-
-# Partição para LUKS (resto do disco)
-parted -a optimal $NVME mkpart primary 513MiB 100%
-
-# Verificar
-parted $NVME print
+# Subscrever os dados do dispositivo NVMe (opcional; se o disco é muito grande, é recomendado aumentar de forma proporcional o valor de 512 bytes)
+dd if=/dev/urandom of=$NVME bs=512 status=progress && sync
 ```
 
-## Formatando EFI
-
-```bash
-mkfs.vfat -F32 -n "EFI" ${NVME}p1
-```
-
-## Preparando USB para Secrets
+## Preparando USB para EFI e Secrets
 
 ```bash
 # Identificar USB
-USB=/dev/sdX  # CUIDADO: verificar com lsblk
+USB=/dev/sdX  # CUIDADO: verificar com lsblk (ver docs/00-preparacao.md)
 
-# Criar partição
+# Subscrever os dados do dispositivo USB (opcional)
+dd if=/dev/urandom of=$USB bs=512 status=progress && sync
+
+# Criar partição EFI
 parted -a optimal $USB mklabel gpt
-parted -a optimal $USB mkpart primary fat32 1MiB 100%
+parted -a optimal $USB mkpart primary fat32 1MiB 1026MiB 
+parted $USB set 1 esp on
+
+# Criar partição LUKS para as Secrets
+parted -a optimal $USB mkpart primary 1026MiB 100%
 
 # Formatar com label específica
-mkfs.vfat -F32 -n "INTFS_KEY" ${USB}1
+mkfs.vfat -F32 -n "EFI" ${USB}1
+
+# Criptografar a partição para as Secrets
+cryptsetup luksFormat \
+    --type luks2 \
+    --cipher aes-xts-plain64 \
+    --hash sha512 \
+    --key-size 512 \
+    --iter-time 2500 \
+    --pbkdf argon2id \
+    ${USB}2
+
+# Descriptografar a partição para as Secrets
+cryptsetup luksOpen ${USB}2 secrets
+
+# Formatar a partição para as Secrets
+mkfs.ext4 -v -L "KEYS" /dev/mapper/secrets
 
 # Montar
-mkdir -p /mnt/usb
-mount ${USB}1 /mnt/usb
+mkdir /mnt/secrets
+mount /dev/mapper/secrets /mnt/secrets
 ```
 
 ## Criando Keyfile Criptografado
 
-O keyfile é um arquivo pequeno, ele mesmo criptografado com LUKS, que contém dados aleatórios usados como chave para o disco principal.
+O keyfile é um arquivo pequeno, criptografado com LUKS, que contém dados aleatórios usados como chave para o disco principal.
 
 ```bash
-cd /mnt/usb
+# Mude para o diretório /mnt/usb
+cd /mnt/secrets
 
 # Criar arquivo de 4MB com dados aleatórios
 dd if=/dev/urandom of=key.img bs=1M count=4
@@ -67,7 +75,7 @@ cryptsetup luksFormat \
     --cipher aes-xts-plain64 \
     --hash sha512 \
     --key-size 512 \
-    --iter-time 5000 \
+    --iter-time 2500 \
     --pbkdf argon2id \
     key.img
 
@@ -82,7 +90,7 @@ dd if=/dev/urandom of=/dev/mapper/lukskey bs=1M count=4
 
 ```bash
 # Criar arquivo para o header (16MB é suficiente)
-dd if=/dev/urandom of=/mnt/usb/header.img bs=1M count=16
+dd if=/dev/urandom of=/mnt/secrets/header.img bs=1M count=16
 ```
 
 ## Criptografando Disco Principal
@@ -94,21 +102,21 @@ cryptsetup luksFormat \
     --cipher aes-xts-plain64 \
     --hash sha512 \
     --key-size 512 \
-    --iter-time 10000 \
+    --iter-time 5000 \
     --pbkdf argon2id \
-    --header /mnt/usb/header.img \
+    --header /mnt/secrets/header.img \
     --key-file /dev/mapper/lukskey \
-    ${NVME}p2
+    ${NVME}
 
 # Abrir a partição
 cryptsetup luksOpen \
-    --header /mnt/usb/header.img \
+    --header /mnt/secrets/header.img \
     --key-file /dev/mapper/lukskey \
-    ${NVME}p2 \
+    ${NVME} \
     gentoo
 ```
 
-> **Nota:** Sem o header, a partição ${NVME}p2 é indistinguível de dados aleatórios.
+> **Nota:** Sem o header, a partição ${NVME} é indistinguível de dados aleatórios. Além do fato do disco principal para a instalação do sistema Gentoo ser partitionless.
 
 ## Criando Btrfs com Subvolumes
 
@@ -130,6 +138,9 @@ btrfs subvolume create /mnt/gentoo/@opt
 # Listar e anotar IDs
 btrfs subvolume list /mnt/gentoo
 
+# Configurar o ID do subvolume @ como padrão do sistema
+btrfs subvolume set-default <ID> /mnt/gentoo
+
 # Desmontar
 umount /mnt/gentoo
 ```
@@ -147,14 +158,14 @@ mount -t btrfs -o ${BTRFS_OPTS},subvol=@ /dev/mapper/gentoo /mnt/gentoo
 mkdir -p /mnt/gentoo/{root,home,var,usr,opt,boot/efi}
 
 # Montar subvolumes
-mount -t btrfs -o ${BTRFS_OPTS},subvol=@root /dev/mapper/gentoo /mnt/gentoo/root
-mount -t btrfs -o ${BTRFS_OPTS},subvol=@home /dev/mapper/gentoo /mnt/gentoo/home
-mount -t btrfs -o ${BTRFS_OPTS},subvol=@var /dev/mapper/gentoo /mnt/gentoo/var
-mount -t btrfs -o ${BTRFS_OPTS},subvol=@usr /dev/mapper/gentoo /mnt/gentoo/usr
-mount -t btrfs -o ${BTRFS_OPTS},subvol=@opt /dev/mapper/gentoo /mnt/gentoo/opt
+mount -t btrfs -o ${BTRFS_OPTS},nodev,nosuid,subvol=@root /dev/mapper/gentoo /mnt/gentoo/root
+mount -t btrfs -o ${BTRFS_OPTS},nodev,nosuid,subvol=@home /dev/mapper/gentoo /mnt/gentoo/home
+mount -t btrfs -o ${BTRFS_OPTS},noexec,nodev,nosuid,subvol=@var /dev/mapper/gentoo /mnt/gentoo/var
+mount -t btrfs -o ${BTRFS_OPTS},nodev,subvol=@usr /dev/mapper/gentoo /mnt/gentoo/usr
+mount -t btrfs -o ${BTRFS_OPTS},nodev,nosuid,subvol=@opt /dev/mapper/gentoo /mnt/gentoo/opt
 
 # Montar EFI
-mount ${NVME}p1 /mnt/gentoo/boot/efi
+mount ${USB}1 /mnt/gentoo/boot/efi
 ```
 
 ## Fechando Keyfile
@@ -167,24 +178,25 @@ cryptsetup close lukskey
 
 ```bash
 # PARTUUID da partição criptografada (ANOTAR!)
-blkid -s PARTUUID -o value ${NVME}p2
+#blkid -s PARTUUID -o value ${NVME}p2
 
 # UUID do btrfs (para fstab)
-blkid -s UUID -o value /dev/mapper/gentoo
+GENTOO=`blkid -s UUID -o value /dev/mapper/gentoo`
 
 # UUID da EFI
-blkid -s UUID -o value ${NVME}p1
+EFI=`blkid -s UUID -o value ${USB}1`
 ```
 
 ## Verificação Final
 
 ```bash
+# Lista todos os dispositovos pelo nome, tamanho, tipo, tipo de sistema de arquivo e ponto de montagme
 lsblk -o NAME,SIZE,TYPE,FSTYPE,MOUNTPOINT
 
-# Deve mostrar algo como:
-# nvme0n1
-# ├─nvme0n1p1    512M  part  vfat   /mnt/gentoo/boot/efi
-# └─nvme0n1p2    xxxG  part  
+# Deve mostrar algo como (a revisar posteriormente com a troca para partitionless):
+# sdXx
+# ├─sdXx    1026M  part  vfat   /mnt/gentoo/boot/efi
+# └─vme0n1p2    xxxG  part  
 #   └─gentoo     xxxG  crypt btrfs  /mnt/gentoo
 ```
 
@@ -192,16 +204,15 @@ lsblk -o NAME,SIZE,TYPE,FSTYPE,MOUNTPOINT
 
 Após a instalação:
 - Guarde o USB em local seguro
-- Considere fazer backup criptografado do header.img e key.img
-- Sem estes arquivos, os dados são irrecuperáveis
+- Considere fazer backup criptografado do header.img e key.img, utilizando a regra de backup 3-2-1, que são: 1. Os arquivos no partição criptografada; 2. Cópia 1 (Local): Salvar em um dispositivo diferente (pendrive ou HD externo); 3. Cópia 2 (Nuvem): Armazenar em um serviço de nuvem (Google Drive, OneDrive, Dropbox)
+- Sem estes arquivos, os dados são irrecuperáveis, então, é importantíssimo a redundância de backup destes arquivos
 
 ## Checklist
 
-- [ ] NVMe particionado (EFI + LUKS)
-- [ ] USB preparado com label INTFS_KEY
+- [ ] USB preparado com duas partições (EFI + LUKS -> ext4, nomeada como KEYS para as Secrets)
 - [ ] key.img criado e criptografado
 - [ ] header.img criado
-- [ ] Partição principal criptografada com detached header
+- [ ] NVMe partitionless criptogrado com detached header
 - [ ] Btrfs com subvolumes criados
 - [ ] Tudo montado em /mnt/gentoo
-- [ ] PARTUUID anotado
+- [ ] UUID das partição EFI e mapper do sistema anotados para construção do /etc/fstab posteriormente
