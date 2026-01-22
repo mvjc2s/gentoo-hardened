@@ -18,19 +18,18 @@
 ### Opção 1: Gentoo Minimal Installation CD
 
 ```bash
-# Download
+# Download Gentoo ISO
 BASE="https://distfiles.gentoo.org/releases/amd64/autobuilds/current-install-amd64-minimal"
 TXT="latest-install-amd64-minimal.txt"
 wget $BASE/$TXT
 ISO=`cat $TXT | grep minimal | cut -d " " -f1`
 wget $BASE/$ISO
 
-# Verificar
-FILE=`echo $ISO | cut -d "/" -f2`
-wget $BASE/$FILE.{asc,sha256,DIGESTS,CONTENTS.gz}
-sha256sum -c $FILE.sha256
+# Verificar Gentoo ISO
+wget $BASE/$ISO.{asc,sha256,DIGESTS,CONTENTS.gz}
+sha256sum -c $ISO.sha256
 gpg --auto-key-locate=clear,nodefault,wkd --locate-key releng@gentoo.org
-gpg --verify $FILE.asc
+gpg --verify $ISO.asc
 ```
 
 ### Opção 2: SystemRescue (mais ferramentas)
