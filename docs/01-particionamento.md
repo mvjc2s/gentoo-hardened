@@ -166,12 +166,12 @@ mount -t btrfs -o ${BTRFS_OPTS},nodev,nosuid,subvol=@opt /dev/mapper/gentoo /mnt
 
 # Montar EFI
 mount ${USB}1 /mnt/gentoo/boot/efi
-```
 
-## Fechando Keyfile
+## Fechando LUKS keyfile, desmontando a partição secrets e fechando o mapper
 
-```bash
 cryptsetup close lukskey
+umount /mnt/secrets
+cryptsetup close secretss
 ```
 
 ## Anotando Informações Importantes
