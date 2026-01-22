@@ -97,12 +97,12 @@ O detached header oferece:
 
 ## Referências
 
-- [Gentoo Handbook](https://wiki.gentoo.org/wiki/Handbook:AMD64)
-- [Custom Initramfs](https://wiki.gentoo.org/wiki/Custom_Initramfs)
-- [Dm-crypt](https://wiki.gentoo.org/wiki/Dm-crypt)
+- [Gentoo Wiki - Gentoo Handbook](https://wiki.gentoo.org/wiki/Handbook:AMD64)
+- [Gentoo Wiki - Custom Initramfs](https://wiki.gentoo.org/wiki/Custom_Initramfs)
+- [Gentoo Wiki - Dm-crypt](https://wiki.gentoo.org/wiki/Dm-crypt)
 - [Arch Wiki - LUKS Detached Header](https://wiki.archlinux.org/title/Dm-crypt/Specialties#Encrypted_system_using_a_detached_LUKS_header)
-- [Gentoo Wiki](https://wiki.gentoo.org/wiki/Custom_Initramfs)
-- [EFI Stub](https://wiki.gentoo.org/wiki/EFI_stub)
+- [Gentoo Wiki - Install Gentoo on a bootable USB stick](https://wiki.gentoo.org/wiki/Install_Gentoo_on_a_bootable_USB_stick)
+- [Gentoo Wiki - EFI Stub](https://wiki.gentoo.org/wiki/EFI_stub)
 
 ## Licença
 
