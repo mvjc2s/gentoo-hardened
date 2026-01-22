@@ -182,9 +182,11 @@ cryptsetup close secretss
 
 # UUID do btrfs (para fstab)
 GENTOO=`blkid -s UUID -o value /dev/mapper/gentoo`
+export GENTOO
 
 # UUID da EFI
 EFI=`blkid -s UUID -o value ${USB}1`
+export EFI
 ```
 
 ## Verificação Final

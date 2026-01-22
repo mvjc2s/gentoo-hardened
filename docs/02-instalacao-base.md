@@ -5,11 +5,18 @@
 ```bash
 cd /mnt/gentoo
 
-# Baixar stage3 hardened
+# Download stage3 hardened
 # Verificar URL atual em: https://www.gentoo.org/downloads/
-wget https://distfiles.gentoo.org/releases/amd64/autobuilds/current-stage3-amd64-hardened-openrc/stage3-amd64-hardened-openrc-*.tar.xz
-wget https://distfiles.gentoo.org/releases/amd64/autobuilds/current-stage3-amd64-hardened-openrc/stage3-amd64-hardened-openrc-*.tar.xz.asc
-wget https://distfiles.gentoo.org/releases/amd64/autobuilds/current-stage3-amd64-hardened-openrc/stage3-amd64-hardened-openrc-*.tar.xz.sha256
+# No momento do commit, o stage3 mais atual é o que está abaixo
+BASE="https://distfiles.gentoo.org/releases/amd64/autobuilds/current-stage3-amd64-hardened-openrc"
+TXT="latest-stage3-amd64-hardened-openrc.txt"
+wget $BASE/$TXT
+TAR=`cat $TXT | grep hardened | cut -d " " -f1`
+wget $BASE/$TAR
+
+# Download dos arquivos stage3 hardened para verificação
+
+wget $BASE/$TAR.{CONTENTS.gz,DIGESTS,asc,sha256}
 ```
 
 ## Verificação
@@ -28,7 +35,7 @@ sha256sum -c stage3-*.tar.xz.sha256
 ## Extração
 
 ```bash
-tar xpvf stage3-*.tar.xz --xattrs-include='*.*' --numeric-owner
+tar xpvf stage3-*.tar.xz --xattrs-include='*.*' --numeric-owner -C /mnt/gentoo
 ```
 
 ## Configuração do Portage
@@ -142,6 +149,18 @@ source /etc/profile
 export PS1="(chroot) ${PS1}"
 ```
 
+## INFO: Checando quais USEFLAGS estão configurados, tanto do make.conf como do profile
+
+```bash
+emerge --info | grep ^USE=
+```
+
+## INFO: Checando quais USEFLAGS estão configuradas apenas no profile
+
+```bash
+USE_ORDER="defaults:pkginternal:repo" emerge --info | grep USE=
+```
+
 ## Configuração Inicial
 
 ```bash
@@ -160,6 +179,13 @@ emerge --ask --verbose --update --deep --newuse @world
 emerge --ask --oneshot app-portage/cpuid2cpuflags
 cpuid2cpuflags
 # Copiar output para make.conf
+```
+
+## INFO: Instalando app-portage/gentoolkit e checando USEFLAGS habilitadas para um pacote específico
+
+```bash
+emerge --ask --oneshot app-portage/gentoolkit
+equery u <package-name
 ```
 
 ## Timezone e Locale
@@ -208,7 +234,7 @@ emerge --ask app-editors/vim sys-apps/pciutils sys-apps/usbutils
 
 ```bash
 # Obter UUIDs
-blkid
+#blkid
 
 cat > /etc/fstab << 'EOF'
 # /etc/fstab - Gentoo Lenovo LOQ
@@ -216,34 +242,34 @@ cat > /etc/fstab << 'EOF'
 # <fs>                                      <mountpoint>  <type>  <opts>                                                      <dump/pass>
 
 # EFI
-UUID=XXXX-XXXX                              /boot/efi     vfat    rw,noatime,fmask=0077,dmask=0077                            0 2
+UUID=$EFI                              /boot/efi     vfat    rw,noatime,fmask=0077,dmask=0077                            0 2
 
 # Btrfs subvolumes (via /dev/mapper/gentoo)
-/dev/mapper/gentoo                          /             btrfs   rw,noatime,compress=zstd:1,ssd,space_cache=v2,subvol=@      0 0
-/dev/mapper/gentoo                          /root         btrfs   rw,noatime,compress=zstd:1,ssd,space_cache=v2,subvol=@root  0 0
-/dev/mapper/gentoo                          /home         btrfs   rw,noatime,compress=zstd:1,ssd,space_cache=v2,subvol=@home  0 0
-/dev/mapper/gentoo                          /usr          btrfs   rw,noatime,compress=zstd:1,ssd,space_cache=v2,subvol=@usr   0 0
-/dev/mapper/gentoo                          /var          btrfs   rw,noatime,compress=zstd:1,ssd,space_cache=v2,subvol=@var   0 0
-/dev/mapper/gentoo                          /opt          btrfs   rw,noatime,compress=zstd:1,ssd,space_cache=v2,subvol=@opt   0 0
+$GENTOO                          /                 btrfs   rw,noatime,compress=zstd:1,ssd,space_cache=v2,subvol=@          0 0
+$GENTOO                          /root             btrfs   rw,noatime,compress=zstd:1,ssd,space_cache=v2,subvol=@root      0 0
+$GENTOO                          /home             btrfs   rw,noatime,compress=zstd:1,ssd,space_cache=v2,subvol=@home      0 0
+$GENTOO                          /usr              btrfs   rw,noatime,compress=zstd:1,ssd,space_cache=v2,subvol=@usr       0 0
+$GENTOO                          /var              btrfs   rw,noatime,compress=zstd:1,ssd,space_cache=v2,subvol=@var       0 0
+$GENTOO                          /opt              btrfs   rw,noatime,compress=zstd:1,ssd,space_cache=v2,subvol=@opt       0 0
 
 # Portage tmpfs (ajustar tamanho conforme RAM)
-tmpfs                                       /var/tmp/portage tmpfs rw,nosuid,noatime,nodev,size=16G,mode=775,uid=portage,gid=portage 0 0
+tmpfs                            /var/tmp/portage  tmpfs   rw,nosuid,noatime,nodev,size=16G,mode=775,uid=portage,gid=portage 0 0
 EOF
 
 # Editar e substituir UUIDs corretos
-vim /etc/fstab
+#vim /etc/fstab
 ```
 
 ## Hostname e Rede
 
 ```bash
 # Hostname
-echo "loq" > /etc/hostname
+echo "gentoo" > /etc/hostname
 
 # Hosts
 cat > /etc/hosts << 'EOF'
-127.0.0.1   loq localhost
-::1         loq localhost
+127.0.0.1   gentoo localhost
+::1         gentoo localhost
 EOF
 
 # NetworkManager ou dhcpcd
@@ -263,8 +289,8 @@ useradd -m -G wheel,audio,video,usb,portage -s /bin/bash seu_usuario
 passwd seu_usuario
 
 # Sudo
-emerge --ask app-admin/sudo
-echo "%wheel ALL=(ALL:ALL) ALL" >> /etc/sudoers
+emerge --ask app-admin/doas
+echo "permit persist :wheel" >> /etc/sudoers
 ```
 
 ## Checklist
