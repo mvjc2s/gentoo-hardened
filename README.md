@@ -98,11 +98,19 @@ O detached header oferece:
 ## Referências
 
 - [Gentoo Wiki - Gentoo Handbook](https://wiki.gentoo.org/wiki/Handbook:AMD64)
+- [Gentoo Wiki - Security Handbook](https://wiki.gentoo.org/wiki/Security_Handbook)
+- [Gentoo Wiki - Kernel Configuration Guide](https://wiki.gentoo.org/wiki/Kernel/Gentoo_Kernel_Configuration_Guide)
+- [Gentoo Wiki - Signed kernel module support](https://wiki.gentoo.org/wiki/Signed_kernel_module_support)
+- [Gentoo Wiki - AppArmor](https://wiki.gentoo.org/wiki/Security_Handbook/Linux_Security_Modules/AppArmor)
+- [Gentoo Wiki - Initramfs](https://wiki.gentoo.org/wiki/Kernel/Gentoo_Kernel_Configuration_Guide)
+- [Gentoo Wiki - NVIDIA](https://wiki.gentoo.org/wiki/NVIDIA)
 - [Gentoo Wiki - Custom Initramfs](https://wiki.gentoo.org/wiki/Custom_Initramfs)
 - [Gentoo Wiki - Dm-crypt](https://wiki.gentoo.org/wiki/Dm-crypt)
 - [Arch Wiki - LUKS Detached Header](https://wiki.archlinux.org/title/Dm-crypt/Specialties#Encrypted_system_using_a_detached_LUKS_header)
 - [Gentoo Wiki - Install Gentoo on a bootable USB stick](https://wiki.gentoo.org/wiki/Install_Gentoo_on_a_bootable_USB_stick)
 - [Gentoo Wiki - EFI Stub](https://wiki.gentoo.org/wiki/EFI_stub)
+- [Gentoo Wiki - Portage TMPDIR on tmpfs](https://wiki.gentoo.org/wiki/Portage_TMPDIR_on_tmpfs)
+- [Kernel.org - Admin Guide for Devices](https://www.kernel.org/doc/Documentation/admin-guide/devices.txt)
 
 ## Licença
 
