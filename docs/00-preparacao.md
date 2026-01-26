@@ -48,18 +48,18 @@ gpg --verify $FILE.asc $FILE
 
 ## Planejamento de Partições
 
-### NVMe Principal
+### USB com as partições EFI e LUKS para as Secrets
 | Partição | Tamanho | Tipo | Uso |
 |----------|---------|------|-----|
-| sdXx | 1 GiB | EFI System | /boot/efi, contendo kernel e initramfs |
-| sdXx | Resto | Linux filesystem | LUKS -> ext4, contendo a chave e o header |
+| sdx1 | 1 GiB | EFI System | /boot/efi, contendo kernel e initramfs |
+| sdx2 | Resto | Linux filesystem | LUKS -> ext4, contendo a chave e o header |
 
-### NVMe Principal
+### NVMe Partitionless principal
 | Partição | Tamanho | Tipo | Uso |
 |----------|---------|------|-----|
 | nvme0n1 | Resto | Linux filesystem | LUKS -> btrfs |
 
-### Partição LUKS no dispositivo USB para Secrets
+### Cabeçalho e chave LUKS no partição LUKS para as Secrets
 | Arquivo | Tamanho | Descrição |
 |---------|---------|-----------|
 | key.img | 4MB | Keyfile LUKS encrypted |
