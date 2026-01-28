@@ -112,6 +112,7 @@ O detached header oferece:
 - [Gentoo Wiki - EFI Stub](https://wiki.gentoo.org/wiki/EFI_stub)
 - [Gentoo Wiki - Portage TMPDIR on tmpfs](https://wiki.gentoo.org/wiki/Portage_TMPDIR_on_tmpfs)
 - [Kernel.org - Admin Guide for Devices](https://www.kernel.org/doc/Documentation/admin-guide/devices.txt)
+- [Gentoo Forums - \[SOLVED\] Menuconfig or nconfig?](https://forums.gentoo.org/viewtopic-t-1165878-view-previous.html?sid=9bb5464b4bc1fac95f086993efc8b92b)
 
 ## Licença
 
