@@ -87,7 +87,7 @@ chmod 1777 /usr/src/initramfs/tmp
 
 # Copiar binários
 cp /bin/busybox /usr/src/initramfs/bin/
-cp /sbin/cryptsetup /usr/src/initramfs/sbin/  # ou cryptsetup.static
+cp /sbin/cryptsetup.static /usr/src/initramfs/sbin/cryptsteup
 cp /sbin/btrfs.static /usr/src/initramfs/sbin/btrfs
 
 # Links simbólicos do busybox
@@ -113,8 +113,6 @@ mknod -m 660 mapper/control c 10 236
 
 # NVMe nodes
 mknod -m 660 nvme0n1 b 259 0
-mknod -m 660 nvme0n1p1 b 259 1
-mknod -m 660 nvme0n1p2 b 259 2
 
 # Copiar init
 cp /path/to/init /usr/src/initramfs/init
@@ -127,14 +125,13 @@ Edite `/usr/src/initramfs/init` e ajuste:
 
 ```bash
 # Label do USB com secrets
-USB_LABEL="INTFS_KEY"
+USB_LABEL="EFI"
 
-# PARTUUID do disco criptografado
-# Obter com: blkid -s PARTUUID -o value /dev/nvme0n1p2
-CRYPT_DISK_PARTUUID="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+# UUID do mapper do sistema criptografado
+GENTOO_ID=`blkid -s UUID -o value /dev/mapper/gentoo`
 
 # Nome do dispositivo mapeado
-CRYPT_NAME="gentoo"
+GENTOO_MAPPER="gentoo"
 
 # Subvolumes btrfs
 BTRFS_SUBVOLS="@root:root @home:home @usr:usr @var:var @opt:opt"

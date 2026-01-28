@@ -285,25 +285,25 @@ emerge --ask app-editors/vim sys-apps/pciutils sys-apps/usbutils
 cat > /etc/fstab << 'EOF'
 # /etc/fstab - Gentoo Lenovo LOQ
 
-# <fs>                                      <mountpoint>  <type>  <opts>                                                      <dump/pass>
+# <fs>             <mountpoint>      <type>  <opts>                                                            <dump/pass>
 
 # EFI
-UUID=$EFI                              /boot/efi     vfat    rw,noatime,fmask=0077,dmask=0077                            0 2
+UUID=$EFI_ID       /boot/efi         vfat    rw,noatime,fmask=0077,dmask=0077                                  0 2
 
 # Btrfs subvolumes (via /dev/mapper/gentoo)
-$GENTOO                          /                 btrfs   rw,noatime,compress=zstd:1,ssd,space_cache=v2,subvol=@          0 0
-$GENTOO                          /root             btrfs   rw,noatime,compress=zstd:1,ssd,space_cache=v2,subvol=@root      0 0
-$GENTOO                          /home             btrfs   rw,noatime,compress=zstd:1,ssd,space_cache=v2,subvol=@home      0 0
-$GENTOO                          /usr              btrfs   rw,noatime,compress=zstd:1,ssd,space_cache=v2,subvol=@usr       0 0
-$GENTOO                          /var              btrfs   rw,noatime,compress=zstd:1,ssd,space_cache=v2,subvol=@var       0 0
-$GENTOO                          /opt              btrfs   rw,noatime,compress=zstd:1,ssd,space_cache=v2,subvol=@opt       0 0
+UUID=$GENTOO_ID    /                 btrfs   rw,noatime,compress=zstd:1,ssd,space_cache=v2,subvol=@            0 0
+UUID=$GENTOO_ID    /root             btrfs   rw,noatime,compress=zstd:1,ssd,space_cache=v2,subvol=@root        0 0
+UUID=$GENTOO_ID    /home             btrfs   rw,noatime,compress=zstd:1,ssd,space_cache=v2,subvol=@home        0 0
+UUID=$GENTOO_ID    /usr              btrfs   rw,noatime,compress=zstd:1,ssd,space_cache=v2,subvol=@usr         0 0
+UUID=$GENTOO_ID    /var              btrfs   rw,noatime,compress=zstd:1,ssd,space_cache=v2,subvol=@var         0 0
+UUID=$GENTOO_ID    /opt              btrfs   rw,noatime,compress=zstd:1,ssd,space_cache=v2,subvol=@opt         0 0
 
 # Portage tmpfs (ajustar tamanho conforme RAM)
-tmpfs                            /var/tmp/portage  tmpfs   rw,nosuid,noatime,nodev,size=16G,mode=775,uid=portage,gid=portage 0 0
+tmpfs              /var/tmp/portage  tmpfs   rw,nosuid,nodev,noatime,size=8G,mode=775,uid=portage,gid=portage  0 0
 EOF
 
-# Editar e substituir UUIDs corretos
-#vim /etc/fstab
+# Editar, conforme a sua necessidade, caso for necessário... 
+vim /etc/fstab
 ```
 
 ## Hostname e Rede

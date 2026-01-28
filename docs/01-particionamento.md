@@ -180,15 +180,12 @@ cryptsetup close secretss
 
 ```bash
 # UUID do btrfs (para fstab)
-GENTOO=`blkid -s UUID -o value /dev/mapper/gentoo`
+GENTOO_ID=`blkid -s UUID -o value /dev/mapper/gentoo`
 export GENTOO
 
 # UUID da EFI
-EFI=`blkid -s UUID -o value ${USB}1`
+EFI_ID=`blkid -s UUID -o value ${USB}1`
 export EFI
-
-# UUID do partição LUKS contendo as Secrets (EM REVISÃO!)
-#LUKS=`blkid -s UUID -o value ${USB}2`
 ```
 
 ## Verificação Final
