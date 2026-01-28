@@ -26,10 +26,14 @@ wget $BASE/$TAR.{CONTENTS.gz,DIGESTS,asc,sha256}
 gpg --keyserver hkps://keys.gentoo.org --recv-keys 13EBBDBEDE7A12775DFDB1BABB572E0E2D182910
 
 # Verificar assinatura
-gpg --verify stage3-*.tar.xz.asc
+gpg --verify stage3-*.tar.xz.asc stage3-*.tar.xz
+gpg --output stage3-*.tar.xz.DIGESTS.verified --verify stage3-*.tar.xz.DIGESTS
+gpg --output stage3-*.tar.xz.sha256.verified --verify stage3-*.tar.xz.sha256
 
 # Verificar hash
-sha256sum -c stage3-*.tar.xz.sha256
+sha256sum --check stage3-*.tar.xz.sha256.verified
+
+# Verificar 
 ```
 
 ## Extração
@@ -44,35 +48,32 @@ tar xpvf stage3-*.tar.xz --xattrs-include='*.*' --numeric-owner -C /mnt/gentoo
 
 ```bash
 cat > /mnt/gentoo/etc/portage/make.conf << 'EOF'
-# Gentoo Hardened - Lenovo LOQ
+# Gentoo Hardened - Lenovo LOQ (Configuração inicial)
 # Gerado em: $(date)
 
-# Compilador
+# Compilador padrão
 COMMON_FLAGS="-march=native -O2 -pipe"
 CFLAGS="${COMMON_FLAGS}"
 CXXFLAGS="${COMMON_FLAGS}"
 FCFLAGS="${COMMON_FLAGS}"
 FFLAGS="${COMMON_FLAGS}"
 
+# Compilador RUST (Listar CPUs: # rust -C target-cpu=help)
+RUSTFLAGS="${RUSTFLAGS} -C target-cpu=native"
+
 # Paralelismo (ajustar conforme CPU)
 MAKEOPTS="-j$(nproc) -l$(nproc)"
 EMERGE_DEFAULT_OPTS="--jobs=$(nproc) --load-average=$(nproc)"
-
 # Arquitetura
 CHOST="x86_64-pc-linux-gnu"
 ACCEPT_KEYWORDS="amd64"
 ACCEPT_LICENSE="-* @FREE"
 
 # USE flags globais (minimal)
-USE="hardened -systemd -pulseaudio pipewire wayland -X"
-
-# CPU flags (gerar com cpuid2cpuflags)
-CPU_FLAGS_X86=""
+USE="hardened pipewire X -wayland -systemd -pulseaudio "
 
 # GPU - NVIDIA Optimus
 VIDEO_CARDS="nvidia intel"
-# ou para AMD iGPU:
-# VIDEO_CARDS="nvidia amdgpu"
 
 # Input
 INPUT_DEVICES="libinput"
@@ -93,7 +94,7 @@ PORTAGE_ELOG_SYSTEM="echo save"
 # Features
 FEATURES="split-elog buildpkg parallel-fetch candy"
 
-# Mirrors (ajustar para seu país)
+# Mirrors (ajustar para seu país com o comando mirrorselect)
 GENTOO_MIRRORS="https://gentoo.c3sl.ufpr.br/ https://mirrors.kernel.org/gentoo/"
 EOF
 ```
@@ -129,7 +130,7 @@ EOF
 
 ```bash
 # DNS
-cp --dereference /etc/resolv.conf /mnt/gentoo/etc/
+cp -v -L /etc/resolv.conf /mnt/gentoo/etc/
 
 # Montar sistemas de arquivos necessários
 mount --types proc /proc /mnt/gentoo/proc
@@ -161,6 +162,20 @@ emerge --info | grep ^USE=
 USE_ORDER="defaults:pkginternal:repo" emerge --info | grep USE=
 ```
 
+## INFO: Visualizar as USE flags que podem ser encontradas no sistema
+
+```bash
+less /var/db/repos/gentoo/profiles/use.desc
+```
+
+## OPCIONAL: Visualizar qual licença está sendo utilizada no sistema
+
+```bash
+portageq envvar ACCEPT_LICENSE
+
+# NOTE: A variável LICENSE em um ebuild é apenas uma diretriz para desenvolvedores e usuários do Gentoo. Não se trata de uma declaração legal e não há garantia de que reflita a realidade. Recomenda-se não confiar exclusivamente na interpretação da licença de um pacote de software feita pelo desenvolvedor do ebuild, mas sim verificar o próprio pacote em detalhes, incluindo todos os arquivos instalados no sistema.
+```
+
 ## Configuração Inicial
 
 ```bash
@@ -177,8 +192,15 @@ emerge --ask --verbose --update --deep --newuse @world
 
 # Gerar CPU_FLAGS_X86
 emerge --ask --oneshot app-portage/cpuid2cpuflags
+
+# Inpsecione primeiro, se está curioso
 cpuid2cpuflags
-# Copiar output para make.conf
+
+# E, então, copie a saída para dentro do diretório package.use
+mkdir -p /etc/portage/package.use
+echo "*/* $(cpuid2cpuflags)" > /etc/portage/package.use/00cpu-flags
+
+# TIP: Após o comando acima, para fins de melhor organização do arquivo, mova a linha para a área adequada.
 ```
 
 ## INFO: Instalando app-portage/gentoolkit e checando USEFLAGS habilitadas para um pacote específico
@@ -188,12 +210,38 @@ emerge --ask --oneshot app-portage/gentoolkit
 equery u <package-name
 ```
 
+## OPCIONAL: Selecionar mirrors
+
+```bash
+emerge --ask --verbose --oneshot app-portage/mirrorselect
+mirrorselect -i -o >> /etc/portage/make.conf
+```
+
+## OPCIONAL: Lendo novos itens após atualizações
+
+```bash
+# Comando list traz uma visão por cima dos novos itens
+eselect news list
+
+# Comando read os novos itens podem ser lidos
+eselect news read
+
+# Commando purge novos itens podem ser removidos, uma vez que eles já foram lidos e não serão mais lidos
+eselect news purge
+```
+
+## OPCIONAL: Atualizando o @world set
+
+```bash
+# Usuários que estejam executando uma execução lenta podem solicitar que o Portage realize atualizações para alterações de pacotes, perfis e/ou flags USE no momento:
+emerge --ask --verbose --update --deep --change-use @world
+```
+
 ## Timezone e Locale
 
 ```bash
 # Timezone
-echo "America/Sao_Paulo" > /etc/timezone
-emerge --config sys-libs/timezone-data
+ln -sf /usr/share/zoneinfo/America/Sao_Paulo /etc/localtime
 
 # Locale
 cat > /etc/locale.gen << 'EOF'
@@ -202,7 +250,8 @@ pt_BR.UTF-8 UTF-8
 EOF
 
 locale-gen
-eselect locale set en_US.utf8
+eselect locale list
+eselect locale set en_US.UTF8
 
 # Atualizar ambiente
 env-update && source /etc/profile && export PS1="(chroot) ${PS1}"
@@ -211,9 +260,6 @@ env-update && source /etc/profile && export PS1="(chroot) ${PS1}"
 ## Ferramentas Essenciais
 
 ```bash
-# Package USE flags
-mkdir -p /etc/portage/package.use
-
 # Cryptsetup estático para initramfs
 echo "sys-fs/cryptsetup static static-libs" > /etc/portage/package.use/cryptsetup
 

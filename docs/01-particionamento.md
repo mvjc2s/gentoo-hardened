@@ -21,7 +21,7 @@ dd if=/dev/urandom of=$NVME bs=512 status=progress && sync
 
 ```bash
 # Identificar USB
-USB=/dev/sdX  # CUIDADO: verificar com lsblk (ver docs/00-preparacao.md)
+USB=/dev/sdx  # CUIDADO: verificar com lsblk (ver docs/00-preparacao.md)
 
 # Subscrever os dados do dispositivo USB (opcional)
 dd if=/dev/urandom of=$USB bs=512 status=progress && sync
@@ -96,7 +96,7 @@ dd if=/dev/urandom of=/mnt/secrets/header.img bs=1M count=16
 ## Criptografando Disco Principal
 
 ```bash
-# Formatar partição com header detached e keyfile
+# Criptografar o NVMe utilizando o  header detached e keyfile
 cryptsetup luksFormat \
     --type luks2 \
     --cipher aes-xts-plain64 \
@@ -108,7 +108,7 @@ cryptsetup luksFormat \
     --key-file /dev/mapper/lukskey \
     ${NVME}
 
-# Abrir a partição
+# Abrir o dispositivo criptografada (mapper)
 cryptsetup luksOpen \
     --header /mnt/secrets/header.img \
     --key-file /dev/mapper/lukskey \
@@ -121,10 +121,10 @@ cryptsetup luksOpen \
 ## Criando Btrfs com Subvolumes
 
 ```bash
-# Formatar
+# Formatar o mapeador do sistema
 mkfs.btrfs -L "gentoo" /dev/mapper/gentoo
 
-# Montar temporariamente
+# Montar temporariamente para criação dos subvolumes
 mount /dev/mapper/gentoo /mnt/gentoo
 
 # Criar subvolumes
@@ -135,10 +135,10 @@ btrfs subvolume create /mnt/gentoo/@var
 btrfs subvolume create /mnt/gentoo/@usr
 btrfs subvolume create /mnt/gentoo/@opt
 
-# Listar e anotar IDs
+# Listar e anotar apenas o ID do subvolume-raiz (@)
 btrfs subvolume list /mnt/gentoo
 
-# Configurar o ID do subvolume @ como padrão do sistema
+# Configurar o ID do subvolume-raiz @ como padrão do sistema
 btrfs subvolume set-default <ID> /mnt/gentoo
 
 # Desmontar
@@ -166,9 +166,11 @@ mount -t btrfs -o ${BTRFS_OPTS},nodev,nosuid,subvol=@opt /dev/mapper/gentoo /mnt
 
 # Montar EFI
 mount ${USB}1 /mnt/gentoo/boot/efi
+```
 
 ## Fechando LUKS keyfile, desmontando a partição secrets e fechando o mapper
 
+```bash
 cryptsetup close lukskey
 umount /mnt/secrets
 cryptsetup close secretss
@@ -177,9 +179,6 @@ cryptsetup close secretss
 ## Anotando Informações Importantes
 
 ```bash
-# PARTUUID da partição criptografada (ANOTAR!)
-#blkid -s PARTUUID -o value ${NVME}p2
-
 # UUID do btrfs (para fstab)
 GENTOO=`blkid -s UUID -o value /dev/mapper/gentoo`
 export GENTOO
@@ -187,6 +186,9 @@ export GENTOO
 # UUID da EFI
 EFI=`blkid -s UUID -o value ${USB}1`
 export EFI
+
+# UUID do partição LUKS contendo as Secrets (EM REVISÃO!)
+#LUKS=`blkid -s UUID -o value ${USB}2`
 ```
 
 ## Verificação Final
@@ -195,9 +197,9 @@ export EFI
 # Lista todos os dispositovos pelo nome, tamanho, tipo, tipo de sistema de arquivo e ponto de montagme
 lsblk -o NAME,SIZE,TYPE,FSTYPE,MOUNTPOINT
 
-# Deve mostrar algo como (a revisar posteriormente com a troca para partitionless):
-# sdXx
-# ├─sdXx    1026M  part  vfat   /mnt/gentoo/boot/efi
+# Deve mostrar algo como (EM REVISÃO!):
+# sdxX
+# ├─sdxX    1026M  part  vfat   /mnt/gentoo/boot/efi
 # └─vme0n1p2    xxxG  part  
 #   └─gentoo     xxxG  crypt btrfs  /mnt/gentoo
 ```
