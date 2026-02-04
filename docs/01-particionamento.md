@@ -7,6 +7,28 @@ Este setup usa:
 - Keyfile separado também criptografado
 - Sem header no disco principal = plausible deniability
 
+## Acesso remoto com SSH
+
+```
+O acesso remoto é um grande facilitador para copiarmos e colarmos texto,
+geralmente termos uma interface gráfica externa para navegar melhor pela
+documentação, além de vários outros benefícios. Portanto, é preferível
+utilizar o SSH. Todavia, caso não tenha esta possibilidade, pode utilizar
+outra ferramenta como o comando screen, ou simplesmente faça tudo na unha
+mesmo em um português claro.
+```
+
+```bash
+# Crie uma senha para o usuário root
+passwd
+
+# Inicie o serviço (daemon) SSH
+rc-service sshd start && ifconfig
+
+# No sistema-cliente ao qual será usado para acessar o nosso serviço SSH, use o comando abaixo apenas substituindo para o seu IP:
+ssh root@[IP]
+```
+
 ## Preparação do dispositivo NVMe
 
 ```bash
