@@ -32,7 +32,7 @@ gpg --auto-key-locate=clear,nodefault,wkd --locate-key releng@gentoo.org
 gpg --verify $ISO.asc
 ```
 
-### Opção 2: SystemRescue (mais ferramentas)
+### Opção 2: SystemRescue (mais ferramentas, caso ache necessário, até mesmo como um USB Live secundário)
 ```bash
 BASE="https://fastly-cdn.system-rescue.org/releases"
 VERSION="12.03"
@@ -44,6 +44,13 @@ wget https://www.system-rescue.org/security/signing-keys/gnupg-pubkey-fdupoux-20
 mv gnupg*.pem gnupg-pubkey.txt
 gpg --import gnupg-pubkey.txt
 gpg --verify $FILE.asc $FILE
+```
+
+## Gravando a imagem ISO do Gentoo em um dispositivo USB Live
+
+```bash
+# Após a escrita, basta iniciar pelo USB utilizando o Boot Menu de sua máquina (geralmente F12 em tempo de boot)
+dd if=install-amd64-minimal-20260201T164555Z.iso of=/dev/sdx bs=512 status=progress && sync
 ```
 
 ## Planejamento de Partições
