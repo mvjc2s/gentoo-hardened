@@ -99,6 +99,9 @@ O detached header oferece:
 
 - [Gentoo Wiki - Gentoo Handbook](https://wiki.gentoo.org/wiki/Handbook:AMD64)
 - [Gentoo Wiki - Security Handbook](https://wiki.gentoo.org/wiki/Security_Handbook)
+- [Gentoo Wiki - User:SwifT/Complete Handbook](https://wiki.gentoo.org/wiki/User:SwifT/Complete_Handbook)
+- [Gentoo Wiki - Installation](https://wiki.gentoo.org/wiki/Installation)
+- [Gentoo Wiki - Remote shell access](https://wiki.gentoo.org/wiki/User:SwifT/Complete_Handbook/Starting_from_minimal_environment#Remote_shell_access)
 - [Gentoo Wiki - Kernel Configuration Guide](https://wiki.gentoo.org/wiki/Kernel/Gentoo_Kernel_Configuration_Guide)
 - [Gentoo Wiki - Signed kernel module support](https://wiki.gentoo.org/wiki/Signed_kernel_module_support)
 - [Gentoo Wiki - AppArmor](https://wiki.gentoo.org/wiki/Security_Handbook/Linux_Security_Modules/AppArmor)
