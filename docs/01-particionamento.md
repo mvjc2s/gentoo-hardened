@@ -18,15 +18,37 @@ outra ferramenta como o comando screen, ou simplesmente faça tudo na unha
 mesmo em um português claro.
 ```
 
+```
+Precisamos fazer algumas configurações importantes no arquivo /etc/sshd_config
+antes de nos subirmos ao nosso servidor SSH, e são elas:
+
+1 - Port 22222 => Caso tenha algum firewall ou outra solução de segurança,
+mude para uma porta alternativa;
+2 - PermitRootLogin yes => Permita o login no servidor SSH como usuário root;
+3 - PasswordAuthentication yes => Permita a autenticação por meio de senha.
+```
+
+### /etc/ssh/sshd_config
+
+```
+...
+Port 22222
+...
+PermitRootLogin yes
+...
+PasswordAuthentication yes
+...
+```
+
 ```bash
 # Crie uma senha para o usuário root
 passwd
 
-# Inicie o serviço (daemon) SSH
+# Inicie o serviço (daemon) SSH e verifique o seu IP local
 rc-service sshd start && ifconfig
 
 # No sistema-cliente ao qual será usado para acessar o nosso serviço SSH, use o comando abaixo apenas substituindo para o seu IP:
-ssh root@[IP]
+ssh root@[IP] -p 22222
 ```
 
 ## Preparação do dispositivo NVMe
