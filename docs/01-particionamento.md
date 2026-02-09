@@ -95,9 +95,10 @@ cryptsetup luksFormat \
 cryptsetup luksOpen ${USB}2 secrets
 
 # Formatar a partição para as Secrets
-mkfs.ext4 -v -L "KEYS" /dev/mapper/secrets
+mkfs.ext4 -v -L "SECRETS" /dev/mapper/secrets
 
 # Montar
+SECRETS=/dev/mapper/secrets
 mkdir /mnt/secrets
 mount /dev/mapper/secrets /mnt/secrets
 ```
@@ -107,69 +108,46 @@ mount /dev/mapper/secrets /mnt/secrets
 O keyfile é um arquivo pequeno, criptografado com LUKS, que contém dados aleatórios usados como chave para o disco principal.
 
 ```bash
-# Mude para o diretório /mnt/usb
-cd /mnt/secrets
+# Mude para o diretório /mnt/secrets/.cache
+mkdir /mnt/secrets/.cache && cd /mnt/secrets/.cache
 
-# Criar arquivo de 4MB com dados aleatórios
-dd if=/dev/urandom of=key.img bs=1M count=4
-
-# Criptografar o keyfile
-cryptsetup luksFormat \
-    --type luks2 \
-    --cipher aes-xts-plain64 \
-    --hash sha512 \
-    --key-size 512 \
-    --iter-time 2500 \
-    --pbkdf argon2id \
-    key.img
-
-# Abrir o keyfile
-cryptsetup luksOpen key.img lukskey
-
-# Preencher com dados aleatórios (a chave real)
-dd if=/dev/urandom of=/dev/mapper/lukskey bs=1M count=4
+# Criar arquivo de 32 bytes com dados aleatórios
+dd if=/dev/urandom of=cache.dat bs=32 count=1
 ```
 
-## Criando Header Detached
-
-```bash
-# Criar arquivo para o header (16MB é suficiente)
-dd if=/dev/urandom of=/mnt/secrets/header.img bs=1M count=16
-```
-
-## Criptografando Disco Principal
+## Criptografando Disco Principal e Criando o Header Detached
 
 ```bash
 # Criptografar o NVMe utilizando o  header detached e keyfile
-cryptsetup luksFormat \
+cryptsetup luksFormat $NVME \
     --type luks2 \
     --cipher aes-xts-plain64 \
     --hash sha512 \
     --key-size 512 \
     --iter-time 5000 \
     --pbkdf argon2id \
-    --header /mnt/secrets/header.img \
-    --key-file /dev/mapper/lukskey \
-    ${NVME}
+    --header index.dat \
+    --key-file cache.dat
 
 # Abrir o dispositivo criptografada (mapper)
 cryptsetup luksOpen \
-    --header /mnt/secrets/header.img \
-    --key-file /dev/mapper/lukskey \
+    --header index.dat \
+    --key-file cache.dat \
     ${NVME} \
     gentoo
 ```
 
-> **Nota:** Sem o header, a partição ${NVME} é indistinguível de dados aleatórios. Além do fato do disco principal para a instalação do sistema Gentoo ser partitionless.
+> **Nota:** Sem o header, a partição ${NVME} é indistinguível de dados aleatórios. Além do fato do disco principal para a instalação do sistema Gentoo ser partitionless. Portanto, ressalto a importância da realização do backup destes arquivos.
 
 ## Criando Btrfs com Subvolumes
 
 ```bash
 # Formatar o mapeador do sistema
-mkfs.btrfs -L "gentoo" /dev/mapper/gentoo
+GENTOO=/dev/mapper/gentoo
+mkfs.btrfs -L "GENTOO" $GENTOO
 
 # Montar temporariamente para criação dos subvolumes
-mount /dev/mapper/gentoo /mnt/gentoo
+mount $GENTOO /mnt/gentoo
 
 # Criar subvolumes
 btrfs subvolume create /mnt/gentoo/@
@@ -196,40 +174,39 @@ umount /mnt/gentoo
 BTRFS_OPTS="rw,noatime,compress=zstd:1,ssd,space_cache=v2,discard=async"
 
 # Montar subvolume principal
-mount -t btrfs -o ${BTRFS_OPTS},subvol=@ /dev/mapper/gentoo /mnt/gentoo
+mount -t btrfs -o ${BTRFS_OPTS} $GENTOO /mnt/gentoo
 
 # Criar pontos de montagem
 mkdir -p /mnt/gentoo/{root,home,var,usr,opt,boot/efi}
 
 # Montar subvolumes
-mount -t btrfs -o ${BTRFS_OPTS},nodev,nosuid,subvol=@root /dev/mapper/gentoo /mnt/gentoo/root
-mount -t btrfs -o ${BTRFS_OPTS},nodev,nosuid,subvol=@home /dev/mapper/gentoo /mnt/gentoo/home
-mount -t btrfs -o ${BTRFS_OPTS},noexec,nodev,nosuid,subvol=@var /dev/mapper/gentoo /mnt/gentoo/var
-mount -t btrfs -o ${BTRFS_OPTS},nodev,subvol=@usr /dev/mapper/gentoo /mnt/gentoo/usr
-mount -t btrfs -o ${BTRFS_OPTS},nodev,nosuid,subvol=@opt /dev/mapper/gentoo /mnt/gentoo/opt
+mount -t btrfs -o ${BTRFS_OPTS},nodev,nosuid,subvol=@root $GENTOO /mnt/gentoo/root
+mount -t btrfs -o ${BTRFS_OPTS},nodev,nosuid,subvol=@home $GENTOO /mnt/gentoo/home
+mount -t btrfs -o ${BTRFS_OPTS},noexec,nodev,nosuid,subvol=@var $GENTOO /mnt/gentoo/var
+mount -t btrfs -o ${BTRFS_OPTS},nodev,subvol=@usr $GENTOO /mnt/gentoo/usr
+mount -t btrfs -o ${BTRFS_OPTS},nodev,nosuid,subvol=@opt $GENTOO /mnt/gentoo/opt
 
 # Montar EFI
 mount ${USB}1 /mnt/gentoo/boot/efi
 ```
 
-## Fechando LUKS keyfile, desmontando a partição secrets e fechando o mapper
+## Desmontando a partição secrets e fechando o seu mapper
 
 ```bash
-cryptsetup close lukskey
 umount /mnt/secrets
-cryptsetup close secretss
+cryptsetup close secrets
 ```
 
 ## Anotando Informações Importantes
 
 ```bash
 # UUID do btrfs (para fstab)
-GENTOO_ID=`blkid -s UUID -o value /dev/mapper/gentoo`
-export GENTOO
+GENTOO_ID=`blkid -s UUID -o value $GENTOO`
+export GENTOO_ID
 
 # UUID da EFI
 EFI_ID=`blkid -s UUID -o value ${USB}1`
-export EFI
+export EFI_ID
 ```
 
 ## Verificação Final
@@ -238,11 +215,19 @@ export EFI
 # Lista todos os dispositovos pelo nome, tamanho, tipo, tipo de sistema de arquivo e ponto de montagme
 lsblk -o NAME,SIZE,TYPE,FSTYPE,MOUNTPOINT
 
-# Deve mostrar algo como (EM REVISÃO!):
-# sdxX
-# ├─sdxX    1026M  part  vfat   /mnt/gentoo/boot/efi
-# └─vme0n1p2    xxxG  part  
-#   └─gentoo     xxxG  crypt btrfs  /mnt/gentoo
+# Deve mostrar algo como:
+NAME          SIZE TYPE  FSTYPE      MOUNTPOINT
+loop0       811.2M loop  squashfs    /run/rootfsbase
+sda          29.3G disk
+├─sda1          1G part  vfat        /mnt/gentoo/boot/efi
+└─sda2       28.3G part  crypto_LUKS
+sdb          14.4G disk  iso9660
+├─sdb1        260K part
+├─sdb2        2.8M part  vfat
+├─sdb3      923.9M part  hfsplus     /run/initramfs/live
+└─sdb4        300K part
+nvme1n1     931.5G disk
+└─gentoo    931.5G crypt btrfs       /mnt/gentoo/opt
 ```
 
 ## Segurança do USB
