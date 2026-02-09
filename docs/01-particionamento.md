@@ -100,7 +100,7 @@ mkfs.ext4 -v -L "SECRETS" /dev/mapper/secrets
 # Montar
 SECRETS=/dev/mapper/secrets
 mkdir /mnt/secrets
-mount /dev/mapper/secrets /mnt/secrets
+mount $SECRETS /mnt/secrets
 ```
 
 ## Criando Keyfile Criptografado
