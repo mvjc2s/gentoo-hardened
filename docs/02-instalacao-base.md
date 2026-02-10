@@ -27,13 +27,11 @@ gpg --keyserver hkps://keys.gentoo.org --recv-keys 13EBBDBEDE7A12775DFDB1BABB572
 
 # Verificar assinatura
 gpg --verify stage3-*.tar.xz.asc stage3-*.tar.xz
-gpg --output stage3-*.tar.xz.DIGESTS.verified --verify stage3-*.tar.xz.DIGESTS
-gpg --output stage3-*.tar.xz.sha256.verified --verify stage3-*.tar.xz.sha256
+gpg --output ${TAR}.DIGESTS.verified --verify stage3-*.tar.xz.DIGESTS
+gpg --output ${TAR}.sha256.verified --verify stage3-*.tar.xz.sha256
 
 # Verificar hash
-sha256sum --check stage3-*.tar.xz.sha256.verified
-
-# Verificar 
+sha256sum --check ${TAR}.sha256.verified
 ```
 
 ## Extração
@@ -59,11 +57,11 @@ FCFLAGS="${COMMON_FLAGS}"
 FFLAGS="${COMMON_FLAGS}"
 
 # Compilador RUST (Listar CPUs: # rust -C target-cpu=help)
-RUSTFLAGS="${RUSTFLAGS} -C target-cpu=native"
+#RUSTFLAGS="${RUSTFLAGS} -C target-cpu=native"
 
 # Paralelismo (ajustar conforme CPU)
-MAKEOPTS="-j$(nproc) -l$(nproc)"
-EMERGE_DEFAULT_OPTS="--jobs=$(nproc) --load-average=$(nproc)"
+MAKEOPTS="-j12 -l12"
+EMERGE_DEFAULT_OPTS="--jobs=12 --load-average=12"
 # Arquitetura
 CHOST="x86_64-pc-linux-gnu"
 ACCEPT_KEYWORDS="amd64"
@@ -95,7 +93,7 @@ PORTAGE_ELOG_SYSTEM="echo save"
 FEATURES="split-elog buildpkg parallel-fetch candy"
 
 # Mirrors (ajustar para seu país com o comando mirrorselect)
-GENTOO_MIRRORS="https://gentoo.c3sl.ufpr.br/ https://mirrors.kernel.org/gentoo/"
+GENTOO_MIRRORS="https://gentoo.c3sl.ufpr.br/ https://mirrors.kernel.org/gentoo/ http://distfiles.gentoo.org"
 EOF
 ```
 
@@ -126,6 +124,17 @@ sync-openpgp-key-refresh-retry-delay-mult = 4
 EOF
 ```
 
+## OPCIONAL: Criando swapfile
+
+```bash
+btrfs subvolume create @swap
+chattr +C @swap
+fallocate -l 16GiB @swap/swapfile
+chmod 600 @swap/swapfile
+mkswap -L SWAP @swap/swapfile
+swapon @swap/swapfile
+```
+
 ## Preparando Chroot
 
 ```bash
@@ -148,32 +157,6 @@ mount --make-slave /mnt/gentoo/run
 chroot /mnt/gentoo /bin/bash
 source /etc/profile
 export PS1="(chroot) ${PS1}"
-```
-
-## INFO: Checando quais USEFLAGS estão configurados, tanto do make.conf como do profile
-
-```bash
-emerge --info | grep ^USE=
-```
-
-## INFO: Checando quais USEFLAGS estão configuradas apenas no profile
-
-```bash
-USE_ORDER="defaults:pkginternal:repo" emerge --info | grep USE=
-```
-
-## INFO: Visualizar as USE flags que podem ser encontradas no sistema
-
-```bash
-less /var/db/repos/gentoo/profiles/use.desc
-```
-
-## OPCIONAL: Visualizar qual licença está sendo utilizada no sistema
-
-```bash
-portageq envvar ACCEPT_LICENSE
-
-# NOTE: A variável LICENSE em um ebuild é apenas uma diretriz para desenvolvedores e usuários do Gentoo. Não se trata de uma declaração legal e não há garantia de que reflita a realidade. Recomenda-se não confiar exclusivamente na interpretação da licença de um pacote de software feita pelo desenvolvedor do ebuild, mas sim verificar o próprio pacote em detalhes, incluindo todos os arquivos instalados no sistema.
 ```
 
 ## Configuração Inicial
@@ -203,11 +186,37 @@ echo "*/* $(cpuid2cpuflags)" > /etc/portage/package.use/00cpu-flags
 # TIP: Após o comando acima, para fins de melhor organização do arquivo, mova a linha para a área adequada.
 ```
 
+## INFO: Checando quais USEFLAGS estão configurados, tanto do make.conf como do profile
+
+```bash
+emerge --info | grep ^USE=
+```
+
+## INFO: Checando quais USEFLAGS estão configuradas apenas no profile
+
+```bash
+USE_ORDER="defaults:pkginternal:repo" emerge --info | grep USE=
+```
+
+## INFO: Visualizar as USE flags que podem ser encontradas no sistema
+
+```bash
+less /var/db/repos/gentoo/profiles/use.desc
+```
+
 ## INFO: Instalando app-portage/gentoolkit e checando USEFLAGS habilitadas para um pacote específico
 
 ```bash
 emerge --ask --oneshot app-portage/gentoolkit
 equery u <package-name
+```
+
+## OPCIONAL: Visualizar qual licença está sendo utilizada no sistema
+
+```bash
+portageq envvar ACCEPT_LICENSE
+
+# NOTE: A variável LICENSE em um ebuild é apenas uma diretriz para desenvolvedores e usuários do Gentoo. Não se trata de uma declaração legal e não há garantia de que reflita a realidade. Recomenda-se não confiar exclusivamente na interpretação da licença de um pacote de software feita pelo desenvolvedor do ebuild, mas sim verificar o próprio pacote em detalhes, incluindo todos os arquivos instalados no sistema.
 ```
 
 ## OPCIONAL: Selecionar mirrors
