@@ -14,7 +14,7 @@ Instalação minimal do Gentoo Linux com profile hardened, LUKS2 com detached he
 - [x] Profile hardened
 - [x] Full disk encryption (LUKS2)
 - [x] Detached LUKS header em USB externo
-- [x] Keyfile criptografado separado
+- [x] Keyfile separado com deniability
 - [x] Btrfs com subvolumes
 - [x] UEFI stub boot (sem GRUB)
 - [x] Custom initramfs
@@ -50,26 +50,37 @@ Instalação minimal do Gentoo Linux com profile hardened, LUKS2 com detached he
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│  USB Externo (INTFS_KEY)                                        │
-│  ├── key.img      (LUKS encrypted keyfile)                      │
-│  └── header.img   (LUKS2 detached header)                       │
+│  USB Externo (EFI e SECRETS)                                    │
+│                                                                 │
+│  ┌────────────────────────────────────────────────────────────┐ │
+│  │ /dev/sda1 (EFI)                                            │ │
+|  | ...                                                        | |
+│  │  ├── bzImage.efi (\EFI\Gentoo)                             | |
+│  └────────────────────────────────────────────────────────────┘ │
+|                                                                 |
+│  ┌────────────────────────────────────────────────────────────┐ │
+│  │ /dev/sda2 (SECRETS)                                        │ │
+|  |                                                            | |
+|  | /dev/mapper/secrets                                        | |
+│  |  ├── cache.dat      (LUKS2 encrypted keyfile)              | │
+│  |  └── index.dat      (LUKS2 detached header)                | │
+│  └────────────────────────────────────────────────────────────┘ │
 └─────────────────────────────────────────────────────────────────┘
 
 ┌─────────────────────────────────────────────────────────────────┐
-│  NVMe Principal                                                 │
+│  NVMe Principal Partitionless (Sistema)                         │
 │                                                                 │
-│  ┌──────────────┐  ┌──────────────────────────────────────────┐ │
-│  │ nvme0n1p1    │  │ nvme0n1p2                                │ │
-│  │ EFI (512MB)  │  │ LUKS2 (sem header) → btrfs               │ │
-│  │ FAT32        │  │                                          │ │
-│  │              │  │ Subvolumes:                              │ │
-│  │ /boot/efi    │  │   @      → /                             │ │
-│  │              │  │   @root  → /root                         │ │
-│  │ bzImage.efi  │  │   @home  → /home                         │ │
-│  │              │  │   @usr   → /usr                          │ │
-│  │              │  │   @var   → /var                          │ │
-│  │              │  │   @opt   → /opt                          │ │
-│  └──────────────┘  └──────────────────────────────────────────┘ │
+│  ┌────────────────────────────────────────────────────────────┐ │
+│  │ /dev/nvme1n1 (GENTOO)                                      │ │
+│  │                                                            | |
+│  │ Subvolumes (/dev/mapper/gentoo):                           │ │
+│  │  @      → /                                                │ │
+│  │  @root  → /root                                            │ │
+│  │  @home  → /home                                            | │
+│  │  @usr   → /usr                                             │ │
+│  │  @var   → /var                                             │ │
+│  │  @opt   → /opt                                             │ │
+│  └────────────────────────────────────────────────────────────┘ │
 └─────────────────────────────────────────────────────────────────┘
 ```
 
@@ -77,7 +88,7 @@ Instalação minimal do Gentoo Linux com profile hardened, LUKS2 com detached he
 
 ```
 UEFI → EFI Stub (bzImage.efi) → initramfs → 
-  → Aguarda USB → Abre keyfile → Abre LUKS com detached header →
+      → Aguarda USB → Abre container USB → Abre container do Sistema →
   → Monta btrfs → switch_root → OpenRC → Sistema
 ```
 
