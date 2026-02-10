@@ -102,6 +102,7 @@ O detached header oferece:
 - [Gentoo Wiki - Hardened Gentoo](https://wiki.gentoo.org/wiki/Hardened_Gentoo)
 - [Gentoo Wiki - User:SwifT/Complete Handbook](https://wiki.gentoo.org/wiki/User:SwifT/Complete_Handbook)
 - [Gentoo Wiki - Installation](https://wiki.gentoo.org/wiki/Installation)
+- [Gentoo Wiki - Swap](https://wiki.gentoo.org/wiki/Swap)
 - [Gentoo Wiki - Remote shell access](https://wiki.gentoo.org/wiki/User:SwifT/Complete_Handbook/Starting_from_minimal_environment#Remote_shell_access)
 - [Gentoo Wiki - Kernel Configuration Guide](https://wiki.gentoo.org/wiki/Kernel/Gentoo_Kernel_Configuration_Guide)
 - [Gentoo Wiki - Signed kernel module support](https://wiki.gentoo.org/wiki/Signed_kernel_module_support)
