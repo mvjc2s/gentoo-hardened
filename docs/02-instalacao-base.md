@@ -180,10 +180,7 @@ emerge --ask --oneshot app-portage/cpuid2cpuflags
 cpuid2cpuflags
 
 # E, então, copie a saída para dentro do diretório package.use
-mkdir -p /etc/portage/package.use
 echo "*/* $(cpuid2cpuflags)" > /etc/portage/package.use/00cpu-flags
-
-# TIP: Após o comando acima, para fins de melhor organização do arquivo, mova a linha para a área adequada.
 ```
 
 ## INFO: Checando quais USEFLAGS estão configurados, tanto do make.conf como do profile
@@ -208,7 +205,7 @@ less /var/db/repos/gentoo/profiles/use.desc
 
 ```bash
 emerge --ask --oneshot app-portage/gentoolkit
-equery u <package-name
+equery u <package-name>
 ```
 
 ## OPCIONAL: Visualizar qual licença está sendo utilizada no sistema
@@ -239,11 +236,18 @@ eselect news read
 eselect news purge
 ```
 
+## OPCIONAL: Configurando os pacotes gentoolkit, dialog, netselect, mirrorselect e cpuid2cpuflags no @world
+
+```bash
+# O comando impedirá que estes pacotes sejam excluídos utilizando o comando: emerge --depclean
+emerge --noreplace app-portage/mirrorselect app-portage/cpuid2cpuflags app-portage/gentoolkit net-analyzer/netselect dev-util/dialog
+```
+
 ## OPCIONAL: Atualizando o @world set
 
 ```bash
-# Usuários que estejam executando uma execução lenta podem solicitar que o Portage realize atualizações para alterações de pacotes, perfis e/ou flags USE no momento:
-emerge --ask --verbose --update --deep --change-use @world
+# Usuários que estejam executando uma instalação mais lenta podem solicitar que o Portage realize atualizações para alterações de pacotes, perfis e/ou flags USE no momento:
+emerge --ask --verbose --update --deep --changed-use @world
 ```
 
 ## Timezone e Locale
@@ -251,6 +255,14 @@ emerge --ask --verbose --update --deep --change-use @world
 ```bash
 # Timezone
 ln -sf /usr/share/zoneinfo/America/Sao_Paulo /etc/localtime
+
+# NTP
+emerge --ask --oneshot net-misc/ntp
+rc-service ntpd start
+rc-update add ntpd default
+# OU
+date -s "AAAA-MM-DD HH:MM:SS"
+hwclock --systohc --utc # OU: --localtime
 
 # Locale
 cat > /etc/locale.gen << 'EOF'
@@ -269,34 +281,46 @@ env-update && source /etc/profile && export PS1="(chroot) ${PS1}"
 ## Ferramentas Essenciais
 
 ```bash
-# Cryptsetup estático para initramfs
-echo "sys-fs/cryptsetup static static-libs" > /etc/portage/package.use/cryptsetup
-
-# Btrfs estático para initramfs
-echo "sys-fs/btrfs-progs static-libs" > /etc/portage/package.use/btrfs-progs
-
-# Busybox estático
-echo "sys-apps/busybox static" > /etc/portage/package.use/busybox
+cat > /etc/portage/package.use/static << 'EOF'
+sys-fs/cryptsetup static static-libs -udev
+sys-fs/btrfs-progs static static-libs
+sys-apps/busybox static -pam
+>=sys-apps/util-linux-2.41.3 static-libs
+>=dev-libs/json-c-0.18 static-libs
+>=dev-libs/popt-1.19-r1 static-libs
+>=app-crypt/argon2-20190702-r1 static-libs
+>=dev-libs/openssl-3.5.5 static-libs
+>=sys-fs/lvm2-2.03.22-r7 static static-libs -udev
+>=virtual/libcrypt-2-r1 static-libs
+>=sys-libs/libxcrypt-4.4.38 static-libs
+>=dev-libs/lzo-2.10 static-libs
+>=sys-fs/e2fsprogs-1.47.3-r1 static-libs
+>=app-arch/zstd-1.5.7-r1 static-libs
+>=virtual/zlib-1.3.1-r1 static-libs
+>=sys-libs/zlib-1.3.1-r1 static-libs
+EOF
 
 # Instalar
 emerge --ask sys-fs/cryptsetup sys-fs/btrfs-progs sys-apps/busybox
 
 # Utilitários
 emerge --ask app-editors/vim sys-apps/pciutils sys-apps/usbutils
+emerge --noreplace app-editors/nano
 ```
 
 ## fstab
 
 ```bash
-# Obter UUIDs
-#blkid
+# Relembrando os comandos para obter UUIDs, caso não tenha feito anteriormente
+GENTOO_ID=`blkid -s UUID -o value /dev/mapper/gentoo`
+EFI_ID=`blkid -s UUID -o value /dev/sda1`
 
-cat > /etc/fstab << 'EOF'
+cat > /etc/fstab << "EOF"
 # /etc/fstab - Gentoo Lenovo LOQ
 
 # <fs>             <mountpoint>      <type>  <opts>                                                            <dump/pass>
 
-# EFI
+# EFI (via /dev/sda1)
 UUID=$EFI_ID       /boot/efi         vfat    rw,noatime,fmask=0077,dmask=0077                                  0 2
 
 # Btrfs subvolumes (via /dev/mapper/gentoo)
@@ -328,9 +352,10 @@ cat > /etc/hosts << 'EOF'
 EOF
 
 # NetworkManager ou dhcpcd
-emerge --ask net-misc/dhcpcd
+# emerge --ask net-misc/dhcpcd
 # ou
-# emerge --ask net-misc/networkmanager
+echo ">=net-wireless/wpa_supplicant-2.11-r4 dbus" > /etc/portage/package.use/networkmanager
+emerge --ask net-misc/networkmanager
 ```
 
 ## Usuário
@@ -340,12 +365,13 @@ emerge --ask net-misc/dhcpcd
 passwd
 
 # Criar usuário
-useradd -m -G wheel,audio,video,usb,portage -s /bin/bash seu_usuario
-passwd seu_usuario
+useradd -m -G wheel,audio,video,usb,portage -s /bin/bash [usuario]
+passwd [usuario]
 
-# Sudo
+# doas
+echo "app-admin/doas persist" >> /etc/portage/package.use/doas
 emerge --ask app-admin/doas
-echo "permit persist :wheel" >> /etc/sudoers
+echo "permit persist :wheel" >> /etc/doas.conf
 ```
 
 ## Checklist
