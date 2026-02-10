@@ -4,10 +4,12 @@
 
 ```bash
 # Licença para firmware
-echo "sys-kernel/linux-firmware linux-fw-redistributable no-source-code" > /etc/portage/package.license/linux-firmware
+mkdir /etc/portage/package.license
+echo "sys-kernel/linux-firmware linux-fw-redistributable" > /etc/portage/package.license/linux-firmware
+echo "sys-firmware/intel-microcode intel-ucode" > /etc/portage/portage.license/intel-microcode
 
-# Instalar gentoo-sources, linux-firmware e intel-microcode
-emerge --ask sys-kernel/gentoo-sources sys-kernel/linux-firmware sys-firmware/intel-microcode sys-apps/pciutils sys-firmware/sof-firmware
+# Instalar gentoo-sources, linux-firmware, intel-microcode e sof-firmware
+emerge --ask sys-kernel/gentoo-sources sys-kernel/linux-firmware sys-firmware/intel-microcode sys-firmware/sof-firmware
 
 # Selecionar kernel
 eselect kernel list
