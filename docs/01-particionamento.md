@@ -188,7 +188,7 @@ mount -t btrfs -o ${BTRFS_OPTS},nodev,nosuid,subvol=@opt $GENTOO /mnt/gentoo/opt
 
 # Montar tmpfs em /var/tmp/portage com 8 GB, mas você pode alterar para o valor que desejar (mais rápido e eficaz em compilação)
 mkdir -p /mnt/gentoo/var/tmp/portage
-mount -t tmpfs -o rw,nosuid,nodev,noatime,size=8G,mode=755,uid=portage,gid=portage /mnt/gentoo/var/tmp/portage
+mount -t tmpfs -o rw,nosuid,nodev,noatime,size=8G,mode=755,uid=portage,gid=portage tmpfs /mnt/gentoo/var/tmp/portage
 
 # Montar EFI
 mount ${USB}1 /mnt/gentoo/boot/efi
