@@ -56,8 +56,8 @@ CXXFLAGS="${COMMON_FLAGS}"
 FCFLAGS="${COMMON_FLAGS}"
 FFLAGS="${COMMON_FLAGS}"
 
-# Compilador RUST (Listar CPUs: # rust -C target-cpu=help)
-#RUSTFLAGS="${RUSTFLAGS} -C target-cpu=native"
+# Compilador RUST (Listar CPUs: # rustc -C target-cpu=help)
+RUSTFLAGS="-C target-cpu=x86_64 opt-level=3 debug-assertions=on lto"
 
 # Paralelismo (ajustar conforme CPU)
 MAKEOPTS="-j12 -l12"
