@@ -184,7 +184,6 @@ Device Drivers --->
 
 ```
 File systems --->
-    <*> Second extended fs support
     <*> The Extended 3 (ext3) filesystem
     <*> The Extended 4 (ext4) filesystem
     <*> Btrfs filesystem support
