@@ -109,6 +109,8 @@ Device Drivers --->
         <*> Crypt target support
         <*> Snapshot target
         <*> Mirror target
+        <*> Unified support for USB4 and Thunderbolt  --->
+
     SCSI device support  ---> 
         <*> SCSI device support
         <*> SCSI disk support
@@ -121,19 +123,18 @@ Device Drivers --->
         [*] ATA SFF support (for legacy IDE and PATA)
         <*> Intel ESB, ICH, PIIX3, PIIX4 PATA/SATA support (ata_piix)
 
-    <*> NVM Express block device
-    [*] NVMe multipath support
-    [*] NVMe hardware monitoring
-    <M> NVM Express over Fabrics FC host driver
-    <M> NVM Express over Fabrics TCP host driver
-    <M> NVMe Target support
-    [*] NVMe Target Passthrough support
-    <M> NVMe loopback device support
-    <M> NVMe over Fabrics FC target driver
-    < > NVMe over Fabrics FC Transport Loopback Test driver (NEW)
-    <M> NVMe over Fabrics TCP target support
     NVME Support --->
         <*> NVM Express block device
+        [*] NVMe multipath support
+        [*] NVMe hardware monitoring
+        <M> NVM Express over Fabrics FC host driver
+        <M> NVM Express over Fabrics TCP host driver
+        <M> NVMe Target support
+        [*] NVMe Target Passthrough support
+        <M> NVMe loopback device support
+        <M> NVMe over Fabrics FC target driver
+        < > NVMe over Fabrics FC Transport Loopback Test driver (NEW)
+        <M> NVMe over Fabrics TCP target support
 
     Generic Driver Options --->
         [*] Maintain a devtmpfs filesystem to mount at /dev
@@ -145,15 +146,15 @@ Device Drivers --->
         [*] Battery level reporting for HID devices
         USB HID support --->
            <*> USB HID transport layer
-        [*] Block devices --->
-           <*> Loopback device support
-        [*] USB support --->
-           <*> Support for Host-side USB
-           <*> EHCI HCD (USB 2.0) support
-           <*> xHCI HCD (USB 3.0) support
-           <*> OHCI HCD (USB 1.1) support
-           <*> USB Mass Storage support
-        <*> Unified support for USB4 and Thunderbolt  --->
+
+    [*] Block devices --->
+       <*> Loopback device support
+    [*] USB support --->
+       <*> Support for Host-side USB
+       <*> EHCI HCD (USB 2.0) support
+       <*> xHCI HCD (USB 3.0) support
+       <*> OHCI HCD (USB 1.1) support
+       <*> USB Mass Storage support
 
     Network device support --->
         <*> PPP (point-to-point protocol) support
@@ -166,16 +167,18 @@ Device Drivers --->
 
 ```
 [*] Cryptographic API --->
-    <*> XTS support
-    <*> SHA224 and SHA256 digest algorithm
-    <*> SHA384 and SHA512 digest algorithms
-    <*> Whirlpool digest algorithms
-    <*> AES cipher algorithms
-    <*> AES cipher algorithms (x86_64)
-    <*> Serpent cipher algorithm
-    <*> User-space interface for hash algorithms
-    <*> User-space interface for symmetric key cipher algorithms
-    <*> User-space interface for AEAD cipher algorithms
+    Hashes, digests, and MACs --->
+        <*> SHA224 and SHA256 digest algorithm
+        <*> SHA384 and SHA512 digest algorithms
+        <*> Whirlpool digest algorithms
+    Length-preserving ciphers and modes --->
+        <*> XTS (XOR Encrypt XOR with ciphertext stealing)
+    Block ciphers --->
+        <*> AES (Advanced Encryption Standard)
+        <*> Serpent cipher algorithm
+        <*> User-space interface for hash algorithms
+        <*> User-space interface for symmetric key cipher algorithms
+        <*> User-space interface for AEAD cipher algorithms
 ```
 
 ### Sistemas de arquivos e Btrfs
