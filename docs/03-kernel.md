@@ -94,10 +94,8 @@ Processor type and features --->
     [*] Built-in kernel command line
     ()  Built-in kernel command string
 
-    Binary Emulations --->
-       [*] IA32 Emulation
-    General architecture-dependent options  --->
-       [*] Provide system calls for 32-bit time_t
+Binary Emulations --->
+    [*] IA32 Emulation
 ```
 
 ### Device Mapper, Crypt, NVMe, USB e entre outros dispositivos
