@@ -110,11 +110,9 @@ Device Drivers --->
         <*> Snapshot target
         <*> Mirror target
         <*> Unified support for USB4 and Thunderbolt  --->
-
     SCSI device support  ---> 
         <*> SCSI device support
         <*> SCSI disk support
-
     <*> Serial ATA and Parallel ATA drivers (libata)  --->
         [*] ATA ACPI Support
         [*] SATA Port Multiplier support
@@ -122,7 +120,6 @@ Device Drivers --->
         [*] ATA BMDMA support
         [*] ATA SFF support (for legacy IDE and PATA)
         <*> Intel ESB, ICH, PIIX3, PIIX4 PATA/SATA support (ata_piix)
-
     NVME Support --->
         <*> NVM Express block device
         [*] NVMe multipath support
@@ -135,11 +132,9 @@ Device Drivers --->
         <M> NVMe over Fabrics FC target driver
         < > NVMe over Fabrics FC Transport Loopback Test driver (NEW)
         <M> NVMe over Fabrics TCP target support
-
     Generic Driver Options --->
         [*] Maintain a devtmpfs filesystem to mount at /dev
         [*]   Automount devtmpfs at /dev, after the kernel mounted the rootfs
-
     HID support --->
         <*> HID bus support
         <*> Generic HID driver
@@ -155,7 +150,6 @@ Device Drivers --->
        <*> xHCI HCD (USB 3.0) support
        <*> OHCI HCD (USB 1.1) support
        <*> USB Mass Storage support
-
     Network device support --->
         <*> PPP (point-to-point protocol) support
         <*> PPP over Ethernet
@@ -189,11 +183,9 @@ File systems --->
     <*> The Extended 4 (ext4) filesystem
     <*> Btrfs filesystem support
     [*]   Btrfs POSIX Access Control Lists
-    
     DOS/FAT/NT Filesystems --->
         <*> MSDOS fs support
         <*> VFAT (Windows-95) fs support
-    
     Pseudo filesystems --->
         [*] /proc file system support
         [*] Tmpfs virtual memory file system support
@@ -203,24 +195,23 @@ File systems --->
 ### EFI e configurações de esquema de partição
 
 ```
-Firmware Drivers --->
-    EFI (Extensible Firmware Interface) Support --->
-        <*> EFI Variable Support via sysfs
-        [*] Export efi runtime maps to sysfs
-
 Device Drivers --->
     Graphics support  --->
         Frame buffer Devices  --->
             <*> Support for frame buffer devices  --->
                 [*]   EFI-based Framebuffer Support
+    Firmware Drivers --->
+        EFI (Extensible Firmware Interface) Support --->
+            <*> EFI Variable Support via sysfs
+            [*] Export efi runtime maps to sysfs
     Sound card support --->
         Advanced Linux Sound Architecture --->
             <M> ALSA for SoC audio support --->
-            [*] Sound Open Firmware Support --->
-                <M> SOF PCI enumeration support
-                <M> SOF ACPI enumeration support
-                <M> SOF support for AMD audio DSPs
-                [*] SOF support for Intel audio DSPs
+                [*] Sound Open Firmware (SOF) Support --->
+                    <M> SOF PCI enumeration support
+                    <M> SOF ACPI enumeration support
+                    <M> SOF support for AMD audio DSPs
+                    [*] SOF support for Intel audio DSPs
 
 
 Processor type and features  --->
@@ -238,16 +229,14 @@ Processor type and features  --->
 
 ```
 Device Drivers --->
-    Graphics support --->
-        <*> Direct Rendering Manager (XFree86 4.1.0 and higher DRI support)
-        [*]   Enable legacy fbdev support for your modesetting driver
-
-        # Intel iGPU (se aplicável)
+    /dev/agpgart (AGP Support) --->
         <*> Intel 8xx/9xx/G3x/G4x/HD Graphics
-
-        # Frame buffer (para console)
-        <*> Support for frame buffer devices --->
-            [*] EFI-based Framebuffer Support
+    Graphics support --->
+        <*> Direct Rendering Manager (XFree86 4.1.0 and higher DRI support) --->
+            Supported DRM clients --->
+                (X) fbdev
+            <*> Console display driver support --->
+                [*] Framebuffer Console Support (NEW)
 ```
 
 ### Hardening (opcional mas recomendado)
@@ -260,10 +249,15 @@ Security options --->
 
     Kernel hardening options --->
         Memory initialization --->
-            [*] Initialize kernel stack variables at function entry
+            [*] Initialize kernel stack variables at function entry (zero-init everything (strongest and safest)) --->
+                (X) zero-init everything (strongest and safest)
             [*] Poison kernel stack before returning from syscalls
-        [*] Randomize the address of the kernel image (KASLR)
-        [*] Randomize the kernel memory sections
+        Bounds checking --->
+            [*] Harden common str/mem functions against buffer overflows
+            [*] Harden memory copies between kernel and userspace
+            [*] Harden memory copies by default
+            [*] Randomize layout of sensitive kernel structures (Fully randomize structure layout) --->
+                (X) Fully randomize structure layout
 ```
 
 ### Assinar os módulos do kernel
@@ -273,7 +267,8 @@ Security options --->
   -*-   Module signature verification    
     [*]     Require modules to be validly signed
     [*]     Automatically sign all modules    
-    Which hash algorithm should modules be signed with? (Sign modules with SHA-512) --->
+    Which hash algorithm should modules be signed with? (SHA-512) --->
+        (X) SHA-512
 ```
 
 ## RECOMENDADO: Para usar uma chave customizada, especifique esta chave em CONFIG_MODULE_SIG_KEY.
