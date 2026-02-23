@@ -49,8 +49,8 @@ cat > /mnt/gentoo/etc/portage/make.conf << 'EOF'
 # Gentoo Hardened - Lenovo LOQ (Configuração inicial)
 # Gerado em: $(date)
 
-# Compilador padrão
-COMMON_FLAGS="-march=native -O2 -pipe"
+# Compilador padrão (app/misc/resolve-march-native)
+COMMON_FLAGS="-march=alderlake -mabm -mno-kl -mno-pconfig -mno-sgx -mno-widekl -mshstk --param=l1-cache-line-size=64 --param=l1-cache-size=32 --param=l2-cache-size=12288 -O2 -pipe"
 CFLAGS="${COMMON_FLAGS}"
 CXXFLAGS="${COMMON_FLAGS}"
 FCFLAGS="${COMMON_FLAGS}"
