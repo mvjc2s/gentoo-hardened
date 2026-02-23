@@ -343,7 +343,7 @@ Security options  --->
 
 
 ```bash
-# Após a compilação do Kernel, como explicado na próxima seção, a imagem do Kernel deve ser assinada. Primeiro, isntale app-crypt/sbsigntools e, então assine a imagem do Kernel:
+# Após a compilação do Kernel, como explicado na próxima seção, a imagem do Kernel deve ser assinada. Primeiro, instale app-crypt/sbsigntools e, então assine a imagem do Kernel:
 emerge --ask app-crypt/sbsigntools
 sbsign /usr/src/linux-x.y.z/path/to/kernel-image --cert /path/to/kernel_key.pem --key /path/to/kernel_key.pem --output /usr/src/linux-x.y.z/path/to/kernel-image
 ```
