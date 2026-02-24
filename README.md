@@ -120,6 +120,7 @@ O detached header oferece:
 - [Gentoo Wiki - AppArmor](https://wiki.gentoo.org/wiki/Security_Handbook/Linux_Security_Modules/AppArmor)
 - [Gentoo Wiki - Initramfs](https://wiki.gentoo.org/wiki/Kernel/Gentoo_Kernel_Configuration_Guide)
 - [Gentoo Wiki - Custom Initramfs](https://wiki.gentoo.org/wiki/Custom_Initramfs)
+- [Gentoo Wiki - Intel](https://wiki.gentoo.org/wiki/Intel)
 - [Gentoo Wiki - NVIDIA](https://wiki.gentoo.org/wiki/NVIDIA)
 - [Gentoo Wiki - NVIDIA/nvidia-drivers](https://wiki.gentoo.org/wiki/NVIDIA/nvidia-drivers)
 - [Gentoo Wiki - Custom Initramfs](https://wiki.gentoo.org/wiki/Custom_Initramfs)
