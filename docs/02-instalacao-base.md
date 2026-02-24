@@ -304,7 +304,7 @@ EOF
 emerge --ask sys-fs/cryptsetup sys-fs/btrfs-progs sys-apps/busybox
 
 # Utilitários
-emerge --ask app-editors/vim sys-apps/pciutils sys-apps/usbutils
+emerge --ask app-editors/vim sys-apps/pciutils sys-apps/usbutils app-arch/lz4
 emerge --noreplace app-editors/nano
 ```
 
