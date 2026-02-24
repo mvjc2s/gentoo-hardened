@@ -225,12 +225,17 @@ Processor type and features  --->
         [*] EFI GUID Partition support
 ```
 
-### NVIDIA (para depois, não no initramfs)
+### Intel e NVIDIA
 
 ```
 Device Drivers --->
     /dev/agpgart (AGP Support) --->
         <*> Intel 8xx/9xx/G3x/G4x/HD Graphics
+    Generic Driver Options --->
+        [*] Automount devtmpfs at /dev, after the kernel mounted the roots
+        Firmware loader --->
+            (i915/skl_dmc_ver1_27.bin) Build named firmware blobs into the kernel binary
+            (/lib/firmware) Firmware blobs root directory
     Graphics support --->
         <*> Direct Rendering Manager (XFree86 4.1.0 and higher DRI support) --->
             Supported DRM clients --->
