@@ -59,12 +59,6 @@ exec 0</dev/console
 exec 1>/dev/console
 exec 2>/dev/console
 
-# Write /dev/disk/* with mdev or manual links
-#if command -v mdev >/dev/null 2>&1; then
-#    mdev -d &
-#    mdev -s
-#fi
-
 # Wait for disks
 sleep 5
 
@@ -148,7 +142,7 @@ echo ""
 msg "Montando sistemas de arquivos EFI..."
 mount -t vfat -o ro /dev/nvme1n1p1 /newroot/boot/efi
 
-msg "Partica££o EFI montado com sucesso"
+msg "Particao EFI montado com sucesso"
 echo ""
 
 # SWITCH ROOT
