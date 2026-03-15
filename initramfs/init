@@ -3,43 +3,10 @@
 # Gentoo Custom Initramfs - Detached LUKS Header
 # Lenovo LOQ - NVMe + External USB for secrets
 #
-# Estrutura esperada:
-#   - USB externo com partição rotulada "INTFS_KEY" contendo:
-#       /key.img    (LUKS encrypted keyfile)
-#       /header.img (LUKS2 header)
-#   - Disco principal (NVMe) com partição criptografada sem header
-#
 
-set -e
-
-# =============================================================================
-# CONFIGURAÇÃO - ajuste conforme sua instalação
-# =============================================================================
-
-# Label da partição USB que contém os segredos
-USB_LABEL="INTFS_KEY"
-
-# Label ou PARTUUID do disco criptografado principal
-# Use PARTUUID para evitar problemas com enumeração de dispositivos
-CRYPT_DISK_PARTUUID="YOUR-PARTUUID-HERE"
-# Alternativa por label (menos seguro, pode ser falsificado):
-# CRYPT_DISK_LABEL="cryptdisk"
-
-# Nome do dispositivo mapeado
-CRYPT_NAME="gentoo"
-
-# Subvolumes btrfs a montar
+GENTOO_MAPPER="/dev/mapper/gentoo"
+SECRETS_MAPPER="/dev/mapper/secrets"
 BTRFS_SUBVOLS="@root:root @home:home @usr:usr @var:var @opt:opt"
-
-# Timeout para aguardar dispositivos USB (segundos)
-USB_TIMEOUT=30
-
-# Máximo de tentativas de senha
-MAX_TRIES=3
-
-# =============================================================================
-# FUNÇÕES AUXILIARES
-# =============================================================================
 
 msg() {
     printf '\033[1;32m>>>\033[0m %s\n' "$1"
@@ -53,7 +20,22 @@ err() {
     printf '\033[1;31m[ERROR]\033[0m %s\n' "$1"
 }
 
-rescue() {
+find_crypt_nvme() {
+    # Acha o NVMe correto pelo serial
+    for dev in /sys/class/nvme/nvme*; do
+    serial=$(cat "$dev/serial" | tr -d ' ')
+    if [ "$serial" = "S5GXNF0R856448H" ]; then
+        CRYPT_DEV="/dev/$(basename $dev)n1"
+        break
+    fi
+done
+
+    if [ -z "$CRYPT_DEV" ]; then
+    	rescue_shell "Crypt device not found!"
+    fi
+}
+
+rescue_shell() {
     err "${1:-Erro desconhecido. Entrando em shell de recuperação...}"
     echo ""
     echo "Comandos úteis:"
@@ -61,91 +43,32 @@ rescue() {
     echo "  cryptsetup luksDump      - verificar header LUKS"
     echo "  cat /proc/partitions     - ver partições detectadas"
     echo ""
-    # Garante que temos um shell funcional
+
+    # Functional shell
+    busybox --install -s
     exec setsid cttyhack /bin/sh
 }
 
-cleanup_and_rescue() {
-    # Limpa dispositivos mapeados antes de entrar em rescue
-    cryptsetup close lukskey 2>/dev/null || true
-    cryptsetup close "$CRYPT_NAME" 2>/dev/null || true
-    umount /mnt/usb 2>/dev/null || true
-    rescue "$1"
-}
+# Mount virtual filesystems
+mount -t devtmpfs none /dev || rescue_shell "Falha ao montar /dev"
+mount -t proc none /proc || rescue_shell "Falha ao montar /proc"
+mount -t sysfs none /sys || rescue_shell "Falha ao montar /sys"
 
-# Aguarda um dispositivo aparecer com timeout
-wait_for_device() {
-    local device="$1"
-    local timeout="$2"
-    local elapsed=0
-
-    while [ ! -e "$device" ] && [ $elapsed -lt $timeout ]; do
-        sleep 1
-        elapsed=$((elapsed + 1))
-    done
-
-    [ -e "$device" ]
-}
-
-# Encontra dispositivo por LABEL
-find_by_label() {
-    local label="$1"
-    local device=""
-    
-    # Tenta encontrar via /dev/disk/by-label
-    if [ -e "/dev/disk/by-label/$label" ]; then
-        device=$(readlink -f "/dev/disk/by-label/$label")
-        echo "$device"
-        return 0
-    fi
-    
-    # Fallback: busca com blkid
-    device=$(blkid -L "$label" 2>/dev/null) || return 1
-    echo "$device"
-}
-
-# Encontra dispositivo por PARTUUID
-find_by_partuuid() {
-    local partuuid="$1"
-    local device=""
-    
-    if [ -e "/dev/disk/by-partuuid/$partuuid" ]; then
-        device=$(readlink -f "/dev/disk/by-partuuid/$partuuid")
-        echo "$device"
-        return 0
-    fi
-    
-    return 1
-}
-
-# =============================================================================
-# INICIALIZAÇÃO
-# =============================================================================
-
-# Monta sistemas de arquivos virtuais
-mount -t devtmpfs none /dev || rescue "Falha ao montar /dev"
-mount -t proc none /proc || rescue "Falha ao montar /proc"
-mount -t sysfs none /sys || rescue "Falha ao montar /sys"
-
-# Cria diretórios necessários
-mkdir -p /dev/disk/by-label /dev/disk/by-partuuid /dev/disk/by-uuid
-mkdir -p /mnt /mnt/usb /newroot
-
-# Redireciona I/O para console
+# Redirect I/O for console
 exec 0</dev/console
 exec 1>/dev/console
 exec 2>/dev/console
 
-# Popula /dev/disk/* com mdev ou links manuais
-if command -v mdev >/dev/null 2>&1; then
-    echo /sbin/mdev > /proc/sys/kernel/hotplug
-    mdev -s
-fi
+# Write /dev/disk/* with mdev or manual links
+#if command -v mdev >/dev/null 2>&1; then
+#    mdev -d &
+#    mdev -s
+#fi
 
-# =============================================================================
-# CABEÇALHO
-# =============================================================================
+# Wait for disks
+sleep 5
 
+# CABECALHO
 clear
 echo ""
 echo "========================================"
@@ -154,186 +77,89 @@ echo "  Lenovo LOQ Custom Initramfs"
 echo "========================================"
 echo ""
 
-# =============================================================================
-# LOCALIZA E MONTA USB COM SEGREDOS
-# =============================================================================
+# GLOBAL VARIABLES
+#EFI=`findfs UUID=9F38-6F64`
+#SECRETS=`findfs UUID=ad152456-8be9-4a39-be8c-4884bdef1ef2`
 
-msg "Aguardando dispositivo USB ($USB_LABEL)..."
-msg "Timeout: ${USB_TIMEOUT}s - Conecte o dispositivo se necessário"
+# DECRYPT SECRETS DISK
+echo ""
+msg "Descriptografando o disco SECRETS"
+
+cryptsetup luksOpen /dev/sda1 secrets || rescue_shell "Nao foi possivel descriptografar secrets"
+mount -o ro "$SECRETS_MAPPER" /mnt/secrets || rescue_shell "Falha ao montar USB"
+
+[ -f /mnt/secrets/.cache/cache.dat ] || rescue_shell "cache.dat nao encontrado no USB"
+[ -f /mnt/secrets/.cache/index.dat ] || rescue_shell "index.dat nao encontrado no USB"
+
+msg "Arquivos de segredos encontrados"
 echo ""
 
-usb_device=""
-elapsed=0
+# DECRYPT SYSTEM
+echo ""
+msg "Abrindo particao criptografada com detached header..."
 
-while [ -z "$usb_device" ] && [ $elapsed -lt $USB_TIMEOUT ]; do
-    # Rescan de dispositivos
-    mdev -s 2>/dev/null || true
-    
-    usb_device=$(find_by_label "$USB_LABEL" 2>/dev/null) || true
-    
-    if [ -z "$usb_device" ]; then
-        printf "\r  Aguardando... %d/%ds " $elapsed $USB_TIMEOUT
-        sleep 1
-        elapsed=$((elapsed + 1))
-    fi
-done
-
+#find_crypt_nvme
+cryptsetup --header /mnt/secrets/.cache/index.dat \
+--key-file /mnt/secrets/.cache/cache.dat \
+luksOpen /dev/nvme1n1p2 gentoo || rescue_shell "nao foi possivel descriptografar o sistema"
+msg "Particao aberta: $GENTOO_MAPPER"
 echo ""
 
-if [ -z "$usb_device" ]; then
-    rescue "USB com label '$USB_LABEL' não encontrado após ${USB_TIMEOUT}s"
-fi
-
-msg "USB encontrado: $usb_device"
-
-# Monta USB (somente leitura)
-mount -o ro "$usb_device" /mnt/usb || rescue "Falha ao montar USB"
-
-# Verifica se os arquivos existem
-[ -f /mnt/usb/key.img ] || rescue "key.img não encontrado no USB"
-[ -f /mnt/usb/header.img ] || rescue "header.img não encontrado no USB"
-
-msg "Arquivos de segredo encontrados"
-
-# =============================================================================
-# ABRE KEYFILE CRIPTOGRAFADO
-# =============================================================================
-
+# UMOUNT SECRETS DEVICE
 echo ""
-msg "Abrindo keyfile criptografado..."
+msg "Desmontando o dispositivo USB SECRETS..."
+
+umount /mnt/secrets || warn "Aviso: falha ao desmontar USB"
+cryptsetup close secrets || warn "Aviso: falha ao fechar $SECRETS_MAPPER"
+
+msg "USB pode ser removido com seguranca"
 echo ""
 
-tries=0
-key_opened=false
-
-while [ $tries -lt $MAX_TRIES ] && [ "$key_opened" = "false" ]; do
-    tries=$((tries + 1))
-    
-    printf "Senha do keyfile (tentativa %d/%d): " $tries $MAX_TRIES
-    
-    if cryptsetup luksOpen /mnt/usb/key.img lukskey 2>/dev/null; then
-        key_opened=true
-        msg "Keyfile aberto com sucesso"
-    else
-        warn "Senha incorreta"
-        sleep 1
-    fi
-done
-
-if [ "$key_opened" = "false" ]; then
-    umount /mnt/usb
-    rescue "Falha ao abrir keyfile após $MAX_TRIES tentativas"
-fi
-
-# =============================================================================
-# LOCALIZA DISCO CRIPTOGRAFADO
-# =============================================================================
-
-msg "Localizando disco criptografado..."
-
-crypt_device=""
-
-# Tenta por PARTUUID primeiro (mais confiável)
-if [ -n "$CRYPT_DISK_PARTUUID" ] && [ "$CRYPT_DISK_PARTUUID" != "YOUR-PARTUUID-HERE" ]; then
-    crypt_device=$(find_by_partuuid "$CRYPT_DISK_PARTUUID" 2>/dev/null) || true
-fi
-
-# Fallback para label se configurado
-if [ -z "$crypt_device" ] && [ -n "${CRYPT_DISK_LABEL:-}" ]; then
-    crypt_device=$(find_by_label "$CRYPT_DISK_LABEL" 2>/dev/null) || true
-fi
-
-# Último recurso: tenta NVMe comum
-if [ -z "$crypt_device" ]; then
-    for dev in /dev/nvme0n1p2 /dev/nvme0n1p3 /dev/sda2 /dev/sda3; do
-        if [ -e "$dev" ]; then
-            warn "Usando dispositivo fallback: $dev"
-            crypt_device="$dev"
-            break
-        fi
-    done
-fi
-
-if [ -z "$crypt_device" ]; then
-    cleanup_and_rescue "Disco criptografado não encontrado"
-fi
-
-msg "Disco encontrado: $crypt_device"
-
-# =============================================================================
-# ABRE PARTIÇÃO CRIPTOGRAFADA
-# =============================================================================
-
+# MOUNT ROOT FILESYSTEM
 echo ""
-msg "Abrindo partição criptografada com detached header..."
-
-if ! cryptsetup \
-    --header /mnt/usb/header.img \
-    --key-file /dev/mapper/lukskey \
-    luksOpen "$crypt_device" "$CRYPT_NAME" 2>/dev/null; then
-    
-    cleanup_and_rescue "Falha ao abrir partição criptografada"
-fi
-
-msg "Partição aberta: /dev/mapper/$CRYPT_NAME"
-
-# =============================================================================
-# LIMPEZA DE SEGREDOS DA MEMÓRIA
-# =============================================================================
-
-msg "Fechando keyfile e desmontando USB..."
-
-cryptsetup close lukskey || warn "Aviso: falha ao fechar lukskey"
-umount /mnt/usb || warn "Aviso: falha ao desmontar USB"
-
-msg "USB pode ser removido com segurança"
-echo ""
-
-# =============================================================================
-# MONTA SISTEMA DE ARQUIVOS ROOT
-# =============================================================================
-
 msg "Montando sistema de arquivos root..."
 
-# Monta subvolume principal
-if ! mount -t btrfs -o ro,subvol=@ /dev/mapper/"$CRYPT_NAME" /newroot; then
-    cleanup_and_rescue "Falha ao montar root filesystem"
+# Mount default subvolume
+if ! mount -t btrfs -o ro "$GENTOO_MAPPER" /newroot; then
+    rescue_shell "Falha ao montar root filesystem"
 fi
 
-# Cria pontos de montagem se não existirem
+# Create mountpoints for subvolumes if they don't exist
 for subvol_entry in $BTRFS_SUBVOLS; do
     mountpoint="${subvol_entry#*:}"
     mkdir -p "/newroot/$mountpoint"
 done
 
-# Monta subvolumes adicionais
+# Mount each subvolumes
 for subvol_entry in $BTRFS_SUBVOLS; do
     subvol="${subvol_entry%%:*}"
     mountpoint="${subvol_entry#*:}"
     
-    if ! mount -t btrfs -o ro,subvol="$subvol" /dev/mapper/"$CRYPT_NAME" "/newroot/$mountpoint" 2>/dev/null; then
+    if ! mount -t btrfs -o ro,subvol="$subvol" "$GENTOO_MAPPER" "/newroot/$mountpoint" 2>/dev/null; then
         warn "Aviso: falha ao montar subvolume $subvol em /$mountpoint"
     fi
 done
 
-msg "Subvolumes btrfs montados"
+msg "Subvolumes btrfs montados com sucesso"
+echo ""
 
-# =============================================================================
+# MOUNT EFI PARTITION
+echo ""
+msg "Montando sistemas de arquivos EFI..."
+mount -t vfat -o ro /dev/nvme1n1p1 /newroot/boot/efi
+
+msg "Partica££o EFI montado com sucesso"
+echo ""
+
 # SWITCH ROOT
-# =============================================================================
-
+echo ""
 msg "Transferindo controle para o sistema..."
 echo ""
 
-# Desmonta sistemas de arquivos virtuais
+# Umount the /sys, /proc and /dev mountpoints os subvolume /sys, /proc e /dev
 umount /sys
 umount /proc
-
-# Move /dev para o novo root
 mount --move /dev /newroot/dev
 
-# Switch root
-exec switch_root /newroot /sbin/init
-
-# Se chegou aqui, algo deu muito errado
-rescue "switch_root falhou"
+# Executa switch_root
+exec switch_root /newroot /sbin/init || rescue_shell "switch_root falhou"
